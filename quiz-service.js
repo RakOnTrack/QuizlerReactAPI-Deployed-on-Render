@@ -116,7 +116,7 @@ module.exports.addQuestion = function (quizID, questionBody) {
   });
 };
 
-// Rread
+// Read
 // get all quizzes 
 //maybe i should also make routes for loading a list of just the quiz names, and loading a specific quiz, so that 
 // the user doesnt have to use so much cellular data just to see the options of availale quizzez.
@@ -133,6 +133,26 @@ module.exports.getQuizzes = function () {
       });
   });
 };
+
+
+
+module.exports.getQuiz = function (quizID) {
+  return new Promise(function (resolve, reject) {
+    Quiz.findById(quizID)
+      .exec()
+      .then((quiz) => {
+        if (quiz) {
+          resolve(quiz);
+        } else {
+          reject(`Quiz with ID ${quizID} not found`);
+        }
+      })
+      .catch((err) => {
+        reject(`Unable to retrieve quiz: ${err}`);
+      });
+  });
+};
+
 
 // get questions for quiz (i dont thin i need this cause the quizzez will be in the quizez questions array.)
 

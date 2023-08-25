@@ -10,9 +10,24 @@ const HTTP_PORT = process.env.PORT || 8080;
 app.use(express.json());
 app.use(cors());
 
+
+
+//get all quizzez
 app.get("/api/quizzes", (req, res) => {
   quizService
     .getQuizzes()
+    .then((data) => {
+      res.json(data);
+    })
+    .catch((msg) => {
+      res.status(422).json({ error: msg });
+    });
+});
+
+//get specific Quiz
+app.get("/api/quizzes/:id", (req, res) => {
+  quizService
+    .getQuiz(req.params.id)
     .then((data) => {
       res.json(data);
     })
