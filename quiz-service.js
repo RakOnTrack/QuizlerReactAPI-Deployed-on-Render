@@ -5,7 +5,6 @@ let mongoDBConnectionString = process.env.MONGO_URL;
 
 // let Schema = mongoose.Schema;
 
-
 const quizSchema = new mongoose.Schema({
   quizTitle: String,
 
@@ -18,14 +17,9 @@ const quizSchema = new mongoose.Schema({
   ],
 });
 
-const questionSchema = new mongoose.Schema({
-  questionTitle: String,
-  correct_answer: String,
-  incorrect_answers: [String],
-});
+
 
 let Quiz;
-
 
 module.exports.connect = function () {
   return new Promise(function (resolve, reject) {
@@ -42,13 +36,7 @@ module.exports.connect = function () {
   });
 };
 
-
-
-
 // CRUD routes:
-
-
-
 
 // Create
 // add quiz,
@@ -73,6 +61,47 @@ module.exports.addQuiz = function (quizData) {
           }
         });
     }
+  });
+};
+
+// copy quiz,
+
+module.exports.copyQuiz = function (quizID) {
+  return new Promise(function (resolve, reject) {
+    // Retrieve the original quiz by ID
+    Quiz.findById(quizID)
+      .exec()
+      .then((originalQuiz) => {
+        if (!originalQuiz) {
+          reject(`Original quiz with ID ${quizID} not found`);
+        } else {
+          // Create a copy of the original quiz data
+          const copiedQuizData = {
+            quizTitle: originalQuiz.quizTitle + "_to_learn",
+            questions: [...originalQuiz.questions],
+          };
+
+          // Create a new Quiz instance using the copied data
+          const newQuiz = new Quiz(copiedQuizData);
+
+          // Save the copied quiz
+          newQuiz
+            .save()
+            .then(() => {
+              resolve(`Quiz ${copiedQuizData.quizTitle} successfully copied`);
+            })
+            .catch((err) => {
+              if (err.code === 11000) {
+                reject("Quiz Title already taken");
+              } else {
+                reject("There was an error copying the quiz: " + err);
+              }
+            });
+        }
+      })
+      .catch((err) => {
+        reject(`Error retrieving original quiz: ${err}`);
+      });
   });
 };
 
@@ -117,13 +146,13 @@ module.exports.addQuestion = function (quizID, questionBody) {
 };
 
 // Read
-// get all quizzes 
-//maybe i should also make routes for loading a list of just the quiz names, and loading a specific quiz, so that 
+// get all quizzes
+//maybe i should also make routes for loading a list of just the quiz names, and loading a specific quiz, so that
 // the user doesnt have to use so much cellular data just to see the options of availale quizzez.
 
 module.exports.getQuizzes = function () {
   return new Promise(function (resolve, reject) {
-    Quiz.find({})
+    Quiz.find({ quizTitle: { $not: /_to_learn$/ } })
       .exec()
       .then((quizzes) => {
         resolve(quizzes);
@@ -134,8 +163,7 @@ module.exports.getQuizzes = function () {
   });
 };
 
-
-
+// get a single quiz.
 module.exports.getQuiz = function (quizID) {
   return new Promise(function (resolve, reject) {
     Quiz.findById(quizID)
@@ -153,6 +181,39 @@ module.exports.getQuiz = function (quizID) {
   });
 };
 
+// first uses quizID to retrieve the quizTitle.
+// checks if there is a _to_learn version of quiz by using quizTitle to search database for quiz with title `${quiz.quizTitle}_to_learn`.
+// yes: return the to_learn version of quiz
+// no: return false.
+module.exports.getToLearnVersion = function (originalQuizID) {
+  return new Promise(function (resolve, reject) {
+    Quiz.findById(originalQuizID)
+      .exec()
+      .then((quiz) => {
+        if (quiz) {
+          const toLearnVersionTitle = `${quiz.quizTitle}_to_learn`;
+
+          Quiz.findOne({ quizTitle: toLearnVersionTitle })
+            .exec()
+            .then((toLearnVersion) => {
+              if (toLearnVersion) {
+                resolve(toLearnVersion);
+              } else {
+                resolve(false); // No _to_learn version found
+              }
+            })
+            .catch((err) => {
+              reject(`Error retrieving _to_learn version: ${err}`);
+            });
+        } else {
+          reject(`Quiz with ID ${originalQuizID} not found`);
+        }
+      })
+      .catch((err) => {
+        reject(`Unable to retrieve quiz: ${err}`);
+      });
+  });
+};
 
 // get questions for quiz (i dont thin i need this cause the quizzez will be in the quizez questions array.)
 
@@ -165,7 +226,39 @@ module.exports.renameQuiz = function (quizID, newTitle) {
       return;
     }
 
-    Quiz.findByIdAndUpdate(quizID, { quizTitle: newTitle }, { new: true })
+    // Search for the _to_learn version of the quiz
+    const toLearnVersionTitle = `${newTitle}_to_learn`;
+    Quiz.findOneAndDelete({ quizTitle: toLearnVersionTitle })
+      .exec()
+      .then(() => {
+        // Update the original quiz title
+        Quiz.findByIdAndUpdate(quizID, { quizTitle: newTitle }, { new: true })
+          .exec()
+          .then((updatedQuiz) => {
+            if (updatedQuiz) {
+              resolve(updatedQuiz);
+            } else {
+              reject(`Quiz with ID ${quizID} not found.`);
+            }
+          })
+          .catch((err) => {
+            reject(`Error updating quiz title: ${err}`);
+          });
+      })
+      .catch((err) => {
+        reject(`Error deleting _to_learn version: ${err}`);
+      });
+  });
+};
+
+module.exports.updateQuizQuestions = function (quizID, updatedQuestions) {
+  return new Promise(function (resolve, reject) {
+    // Update the original quiz title
+    Quiz.findByIdAndUpdate(
+      quizID,
+      { questions: updatedQuestions },
+      { new: true }
+    )
       .exec()
       .then((updatedQuiz) => {
         if (updatedQuiz) {

@@ -10,6 +10,11 @@ const HTTP_PORT = process.env.PORT || 8080;
 app.use(express.json());
 app.use(cors());
 
+// redirect home to get all quizzes.
+app.get("/", (req, res) => {
+  res.redirect("/api/quizzes");
+});
+
 
 
 //get all quizzez
@@ -36,6 +41,30 @@ app.get("/api/quizzes/:id", (req, res) => {
     });
 });
 
+//get specific _to_learn version of Quiz
+app.get("/api/quizzes/toLearn/:id", (req, res) => {
+  quizService
+    .getToLearnVersion(req.params.id)
+    .then((data) => {
+      res.json(data);
+    })
+    .catch((msg) => {
+      res.status(422).json({ error: msg });
+    });
+});
+
+//copy quiz
+app.post("/api/quizzes/copy/:id", (req, res) => {
+  quizService
+    .copyQuiz(req.params.id)
+    .then((data) => {
+      res.json(data);
+    })
+    .catch((msg) => {
+      res.status(422).json({ error: msg });
+    });
+});
+
 //add quiz
 app.post("/api/quizzes/", (req, res) => {
   quizService
@@ -49,7 +78,7 @@ app.post("/api/quizzes/", (req, res) => {
 });
 
 //add question to quiz
-app.post("/api/quizzes/:id", (req, res) => {
+app.post("/api/quizzes/question/:id", (req, res) => {
   quizService
     .addQuestion(req.params.id, req.body)
     .then((data) => {
@@ -64,6 +93,18 @@ app.post("/api/quizzes/:id", (req, res) => {
 app.put("/api/quizzes/:id", (req, res) => {
   quizService
     .renameQuiz(req.params.id, req.body.quizTitle)
+    .then((data) => {
+      res.json(data);
+    })
+    .catch((msg) => {
+      res.status(422).json({ error: msg });
+    });
+});
+
+//update quiz questions
+app.put("/api/quizzes/questions/:id", (req, res) => {
+  quizService
+    .updateQuizQuestions(req.params.id, req.body.questions)
     .then((data) => {
       res.json(data);
     })
@@ -114,8 +155,6 @@ app.delete("/api/quizzes/:quizId/questions/:questionId", (req, res) => {
     });
 });
 
-
-
 quizService
   .connect()
   .then(() => {
@@ -127,4 +166,3 @@ quizService
     console.log("unable to start the server: " + err);
     process.exit();
   });
-
