@@ -5,6 +5,29 @@ let mongoDBConnectionString = process.env.MONGO_URL;
 
 // let Schema = mongoose.Schema;
 
+const questionSchema = new mongoose.Schema({
+  questionTitle: String,
+  correct_answer: String,
+  incorrect_answers: [String],
+  isCorrect: {
+    type: Boolean,
+    default: false,
+  },
+});
+
+const newQuizSchema = new mongoose.Schema({
+  quizTitle: String,
+  questions: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Question", // Assuming 'Question' is the model name for questions
+    },
+  ],
+  started: {
+    type: Boolean,
+    default: false,
+  },
+});
 const quizSchema = new mongoose.Schema({
   quizTitle: String,
 
@@ -17,8 +40,8 @@ const quizSchema = new mongoose.Schema({
   ],
 });
 
-
-
+let Question;
+let newQuiz;
 let Quiz;
 
 module.exports.connect = function () {
@@ -31,6 +54,8 @@ module.exports.connect = function () {
 
     db.once("open", () => {
       Quiz = db.model("quizzez", quizSchema);
+      Question = db.model("Questions", questionSchema);
+      newQuiz = db.model("newQuizzes", newQuizSchema);
       resolve();
     });
   });
@@ -40,6 +65,31 @@ module.exports.connect = function () {
 
 // Create
 // add quiz,
+// module.exports.addQuiz = function (quizData) {
+//   return new Promise(function (resolve, reject) {
+//     const { quizTitle, questions } = quizData;
+
+//     if (!quizTitle || !questions) {
+//       reject("quizTitle or questions not valid.");
+//     } else {
+//       let newestQuiz = new newQuiz(quizData);
+//       newestQuiz
+//         .save()
+//         .then(() => {
+//           resolve("Quiz " + quizData.quizTitle + " successfully added");
+//         })
+//         .catch((err) => {
+//           if (err.code == 11000) {
+//             reject("Quiz Title already taken");
+//           } else {
+//             reject("There was an error creating the quiz: " + err);
+//           }
+//         });
+//     }
+//   });
+// };
+
+// add quiz, trying for redesign!
 module.exports.addQuiz = function (quizData) {
   return new Promise(function (resolve, reject) {
     const { quizTitle, questions } = quizData;
@@ -47,14 +97,22 @@ module.exports.addQuiz = function (quizData) {
     if (!quizTitle || !questions) {
       reject("quizTitle or questions not valid.");
     } else {
-      let newQuiz = new Quiz(quizData);
-      newQuiz
-        .save()
+      const questionsWithoutId = questions.map((question) => {
+        const { _id, ...questionWithoutId } = question;
+        return questionWithoutId;
+      });
+
+      Question.insertMany(questionsWithoutId)
+        .then((insertedQuestions) => {
+          const questionIds = insertedQuestions.map((question) => question._id);
+          let newestQuiz = new newQuiz({ quizTitle, questions: questionIds });
+          return newestQuiz.save();
+        })
         .then(() => {
           resolve("Quiz " + quizData.quizTitle + " successfully added");
         })
         .catch((err) => {
-          if (err.code == 11000) {
+          if (err.code === 11000) {
             reject("Quiz Title already taken");
           } else {
             reject("There was an error creating the quiz: " + err);
@@ -152,7 +210,32 @@ module.exports.addQuestion = function (quizID, questionBody) {
 
 module.exports.getQuizzes = function () {
   return new Promise(function (resolve, reject) {
-    Quiz.find({ quizTitle: { $not: /_to_learn$/ } })
+    newQuiz.aggregate([
+      {
+        $lookup: {
+          from: "questions", // The name of the questions collection
+          localField: "questions",
+          foreignField: "_id",
+          as: "questionsData",
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          quizTitle: 1,
+          numberOfQuestions: { $size: "$questionsData" }, // Count questions
+          numberOfCorrectQuestions: {
+            $size: {
+              $filter: {
+                input: "$questionsData",
+                as: "question",
+                cond: { $eq: ["$$question.isCorrect", true] }, // Count isCorrect = true
+              },
+            },
+          },
+        },
+      },
+    ])
       .exec()
       .then((quizzes) => {
         resolve(quizzes);
@@ -163,10 +246,20 @@ module.exports.getQuizzes = function () {
   });
 };
 
+
+
+//ok this is great! and now make a condition where if the quiz has more than 50 questions, 
+// it first only add the first half, and then a second half using another call
+
+
 // get a single quiz.
 module.exports.getQuiz = function (quizID) {
   return new Promise(function (resolve, reject) {
-    Quiz.findById(quizID)
+    newQuiz.findById(quizID)
+      .populate({
+        path: "questions",
+        model: "Questions", // Assuming 'Question' is the model name for questions
+      })
       .exec()
       .then((quiz) => {
         if (quiz) {
@@ -180,6 +273,7 @@ module.exports.getQuiz = function (quizID) {
       });
   });
 };
+
 
 // first uses quizID to retrieve the quizTitle.
 // checks if there is a _to_learn version of quiz by using quizTitle to search database for quiz with title `${quiz.quizTitle}_to_learn`.
