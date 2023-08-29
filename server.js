@@ -15,8 +15,6 @@ app.get("/", (req, res) => {
   res.redirect("/api/quizzes");
 });
 
-
-
 //get all quizzez
 app.get("/api/quizzes", (req, res) => {
   quizService
@@ -41,17 +39,7 @@ app.get("/api/quizzes/:id", (req, res) => {
     });
 });
 
-//get specific _to_learn version of Quiz
-app.get("/api/quizzes/toLearn/:id", (req, res) => {
-  quizService
-    .getToLearnVersion(req.params.id)
-    .then((data) => {
-      res.json(data);
-    })
-    .catch((msg) => {
-      res.status(422).json({ error: msg });
-    });
-});
+
 
 //restart quiz
 app.put("/api/quizzes/restart/:id", (req, res) => {
@@ -89,8 +77,6 @@ app.post("/api/quizzes/", (req, res) => {
     });
 });
 
-
-
 //rename quiz
 app.put("/api/quizzes/:id", (req, res) => {
   quizService
@@ -103,10 +89,14 @@ app.put("/api/quizzes/:id", (req, res) => {
     });
 });
 
-//update quiz questions
-app.put("/api/quizzes/questions/:id", (req, res) => {
+
+//update question
+app.put("/api/quizzes/questions/:questionId", (req, res) => {
+  const quizId = req.params.quizId;
+  const questionId = req.params.questionId;
+
   quizService
-    .updateQuizQuestions(req.params.id, req.body.questions)
+    .updateQuestion(questionId, req.body)
     .then((data) => {
       res.json(data);
     })
@@ -115,13 +105,10 @@ app.put("/api/quizzes/questions/:id", (req, res) => {
     });
 });
 
-//update question
-app.put("/api/quizzes/:quizId/questions/:questionId", (req, res) => {
-  const quizId = req.params.quizId;
-  const questionId = req.params.questionId;
-
+// update study results
+app.put("/api/quizzes/update/:id", (req, res) => {
   quizService
-    .updateQuestion(quizId, questionId, req.body)
+    .markQuestionsCorrect(req.params.id, req.body.correctQuestions)
     .then((data) => {
       res.json(data);
     })
@@ -143,12 +130,12 @@ app.delete("/api/quizzes/:id", (req, res) => {
 });
 
 // remove question.
-app.delete("/api/quizzes/:quizId/questions/:questionId", (req, res) => {
+app.delete("/api/quizzes/questions/:questionId", (req, res) => {
   const quizId = req.params.quizId;
   const questionId = req.params.questionId;
 
   quizService
-    .removeQuestionFromQuiz(quizId, questionId)
+    .deleteQuestion(questionId)
     .then((updatedQuestions) => {
       res.json(updatedQuestions);
     })
