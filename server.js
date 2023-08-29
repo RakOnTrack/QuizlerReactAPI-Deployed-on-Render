@@ -53,10 +53,22 @@ app.get("/api/quizzes/toLearn/:id", (req, res) => {
     });
 });
 
-//copy quiz
-app.post("/api/quizzes/copy/:id", (req, res) => {
+//restart quiz
+app.put("/api/quizzes/restart/:id", (req, res) => {
   quizService
-    .copyQuiz(req.params.id)
+    .restartQuiz(req.params.id)
+    .then((data) => {
+      res.json(data);
+    })
+    .catch((msg) => {
+      res.status(422).json({ error: msg });
+    });
+});
+
+//add question to quiz
+app.put("/api/quizzes/question/:id", (req, res) => {
+  quizService
+    .addQuestion(req.params.id, req.body)
     .then((data) => {
       res.json(data);
     })
@@ -77,17 +89,7 @@ app.post("/api/quizzes/", (req, res) => {
     });
 });
 
-//add question to quiz
-app.post("/api/quizzes/question/:id", (req, res) => {
-  quizService
-    .addQuestion(req.params.id, req.body)
-    .then((data) => {
-      res.json(data);
-    })
-    .catch((msg) => {
-      res.status(422).json({ error: msg });
-    });
-});
+
 
 //rename quiz
 app.put("/api/quizzes/:id", (req, res) => {

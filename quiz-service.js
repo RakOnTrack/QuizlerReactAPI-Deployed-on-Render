@@ -20,7 +20,7 @@ const newQuizSchema = new mongoose.Schema({
   questions: [
     {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Question", // Assuming 'Question' is the model name for questions
+      ref: "Questions", // Assuming 'Question' is the model name for questions
     },
   ],
   started: {
@@ -41,8 +41,8 @@ const quizSchema = new mongoose.Schema({
 });
 
 let Question;
-let newQuiz;
 let Quiz;
+let oldQuiz;
 
 module.exports.connect = function () {
   return new Promise(function (resolve, reject) {
@@ -53,9 +53,9 @@ module.exports.connect = function () {
     });
 
     db.once("open", () => {
-      Quiz = db.model("quizzez", quizSchema);
+      oldQuiz = db.model("quizzez", quizSchema);
       Question = db.model("Questions", questionSchema);
-      newQuiz = db.model("newQuizzes", newQuizSchema);
+      Quiz = db.model("newQuizzes", newQuizSchema);
       resolve();
     });
   });
@@ -105,7 +105,7 @@ module.exports.addQuiz = function (quizData) {
       Question.insertMany(questionsWithoutId)
         .then((insertedQuestions) => {
           const questionIds = insertedQuestions.map((question) => question._id);
-          let newestQuiz = new newQuiz({ quizTitle, questions: questionIds });
+          let newestQuiz = new Quiz({ quizTitle, questions: questionIds });
           return newestQuiz.save();
         })
         .then(() => {
@@ -123,85 +123,62 @@ module.exports.addQuiz = function (quizData) {
 };
 
 // copy quiz,
-
-module.exports.copyQuiz = function (quizID) {
+module.exports.restartQuiz = function (quizID) {
   return new Promise(function (resolve, reject) {
     // Retrieve the original quiz by ID
     Quiz.findById(quizID)
+      .populate({
+        path: "questions",
+        model: "Questions", // Assuming 'Question' is the model name for questions
+      }) // Populate questions to update them
       .exec()
-      .then((originalQuiz) => {
-        if (!originalQuiz) {
-          reject(`Original quiz with ID ${quizID} not found`);
-        } else {
-          // Create a copy of the original quiz data
-          const copiedQuizData = {
-            quizTitle: originalQuiz.quizTitle + "_to_learn",
-            questions: [...originalQuiz.questions],
-          };
+      .then((quiz) => {
+        // Update each question's isCorrect field to false
+        const updatedQuestionsPromises = quiz.questions.map((question) => {
+          question.isCorrect = false;
+          return question.save(); // Save each modified question
+        });
 
-          // Create a new Quiz instance using the copied data
-          const newQuiz = new Quiz(copiedQuizData);
-
-          // Save the copied quiz
-          newQuiz
-            .save()
-            .then(() => {
-              resolve(`Quiz ${copiedQuizData.quizTitle} successfully copied`);
-            })
-            .catch((err) => {
-              if (err.code === 11000) {
-                reject("Quiz Title already taken");
-              } else {
-                reject("There was an error copying the quiz: " + err);
-              }
-            });
-        }
+        // Wait for all question saves to complete
+        return Promise.all(updatedQuestionsPromises);
+      })
+      .then(() => {
+        resolve(`Quiz questions successfully restarted`);
       })
       .catch((err) => {
-        reject(`Error retrieving original quiz: ${err}`);
+        reject(`Error restarting quiz questions: ${err}`);
       });
   });
 };
 
 // add question,
-
 module.exports.addQuestion = function (quizID, questionBody) {
   return new Promise(function (resolve, reject) {
     const { questionTitle, correct_answer, incorrect_answers } = questionBody;
 
     if (!questionTitle || !correct_answer || !incorrect_answers) {
-      reject("invalid question data.");
+      reject("Invalid question data.");
     } else {
-      Quiz.findById(quizID)
-        .exec()
-        .then((quiz) => {
-          if (quiz) {
-            Quiz.findByIdAndUpdate(
-              quizID,
-              { $push: { questions: questionBody } },
-              { new: true }
-            )
-              .exec() // should add functionality to check if the quiz already has a question with the same title.
-              // or maybe i can just have my app delete the duplicated questions when its first ran
-              // it might be better to do it as questions are added and quizzez are made, we'll figure it out later.
-              .then((updatedQuiz) => {
-                resolve(updatedQuiz.questions);
-              })
-              .catch((err) => {
-                reject(
-                  `Unable to update questions for quiz with id: ${quizID}`
-                );
-              });
-          } else {
-            reject(`Unable to update questions for quiz with id: ${quizID}`);
-          }
+      // Create the new question
+      Question.create(questionBody)
+        .then((newQuestion) => {
+          // Find the quiz by ID and update its questions array
+          return Quiz.findByIdAndUpdate(
+            quizID,
+            { $push: { questions: newQuestion._id } },
+            { new: true }
+          ).exec();
+        })
+        .then((updatedQuiz) => {
+          resolve(getQuiz(quizID)); // Calling getQuiz to return the updated quiz
         })
         .catch((err) => {
-          reject(`Error finding quiz with id: ${quizID}`);
+          reject(`Unable to update questions for quiz with ID: ${quizID}`);
         });
     }
   });
 };
+
 
 // Read
 // get all quizzes
@@ -210,7 +187,7 @@ module.exports.addQuestion = function (quizID, questionBody) {
 
 module.exports.getQuizzes = function () {
   return new Promise(function (resolve, reject) {
-    newQuiz.aggregate([
+    Quiz.aggregate([
       {
         $lookup: {
           from: "questions", // The name of the questions collection
@@ -246,16 +223,13 @@ module.exports.getQuizzes = function () {
   });
 };
 
-
-
-//ok this is great! and now make a condition where if the quiz has more than 50 questions, 
+//ok this is great! and now make a condition where if the quiz has more than 50 questions,
 // it first only add the first half, and then a second half using another call
-
 
 // get a single quiz.
 module.exports.getQuiz = function (quizID) {
   return new Promise(function (resolve, reject) {
-    newQuiz.findById(quizID)
+    Quiz.findById(quizID)
       .populate({
         path: "questions",
         model: "Questions", // Assuming 'Question' is the model name for questions
@@ -274,20 +248,21 @@ module.exports.getQuiz = function (quizID) {
   });
 };
 
-
 // first uses quizID to retrieve the quizTitle.
 // checks if there is a _to_learn version of quiz by using quizTitle to search database for quiz with title `${quiz.quizTitle}_to_learn`.
 // yes: return the to_learn version of quiz
 // no: return false.
 module.exports.getToLearnVersion = function (originalQuizID) {
   return new Promise(function (resolve, reject) {
-    Quiz.findById(originalQuizID)
+    oldQuiz
+      .findById(originalQuizID)
       .exec()
       .then((quiz) => {
         if (quiz) {
           const toLearnVersionTitle = `${quiz.quizTitle}_to_learn`;
 
-          Quiz.findOne({ quizTitle: toLearnVersionTitle })
+          oldQuiz
+            .findOne({ quizTitle: toLearnVersionTitle })
             .exec()
             .then((toLearnVersion) => {
               if (toLearnVersion) {
@@ -320,27 +295,18 @@ module.exports.renameQuiz = function (quizID, newTitle) {
       return;
     }
 
-    // Search for the _to_learn version of the quiz
-    const toLearnVersionTitle = `${newTitle}_to_learn`;
-    Quiz.findOneAndDelete({ quizTitle: toLearnVersionTitle })
+    // Update the original quiz title
+    Quiz.findByIdAndUpdate(quizID, { quizTitle: newTitle }, { new: true })
       .exec()
-      .then(() => {
-        // Update the original quiz title
-        Quiz.findByIdAndUpdate(quizID, { quizTitle: newTitle }, { new: true })
-          .exec()
-          .then((updatedQuiz) => {
-            if (updatedQuiz) {
-              resolve(updatedQuiz);
-            } else {
-              reject(`Quiz with ID ${quizID} not found.`);
-            }
-          })
-          .catch((err) => {
-            reject(`Error updating quiz title: ${err}`);
-          });
+      .then((updatedQuiz) => {
+        if (updatedQuiz) {
+          resolve(updatedQuiz);
+        } else {
+          reject(`Quiz with ID ${quizID} not found.`);
+        }
       })
       .catch((err) => {
-        reject(`Error deleting _to_learn version: ${err}`);
+        reject(`Error updating quiz title: ${err}`);
       });
   });
 };
@@ -348,11 +314,8 @@ module.exports.renameQuiz = function (quizID, newTitle) {
 module.exports.updateQuizQuestions = function (quizID, updatedQuestions) {
   return new Promise(function (resolve, reject) {
     // Update the original quiz title
-    Quiz.findByIdAndUpdate(
-      quizID,
-      { questions: updatedQuestions },
-      { new: true }
-    )
+    oldQuiz
+      .findByIdAndUpdate(quizID, { questions: updatedQuestions }, { new: true })
       .exec()
       .then((updatedQuiz) => {
         if (updatedQuiz) {
@@ -375,7 +338,8 @@ module.exports.updateQuestion = function (quizID, questionID, questionBody) {
     if (!questionTitle || !correct_answer || !incorrect_answers) {
       reject("Invalid question data.");
     } else {
-      Quiz.findById(quizID)
+      oldQuiz
+        .findById(quizID)
         .exec()
         .then((quiz) => {
           if (!quiz) {
@@ -417,7 +381,8 @@ module.exports.updateQuestion = function (quizID, questionID, questionBody) {
 // remove quiz
 module.exports.removeQuiz = function (quizID) {
   return new Promise(function (resolve, reject) {
-    Quiz.findByIdAndRemove(quizID)
+    oldQuiz
+      .findByIdAndRemove(quizID)
       .exec()
       .then((removedQuiz) => {
         if (removedQuiz) {
@@ -435,7 +400,8 @@ module.exports.removeQuiz = function (quizID) {
 // remove question.
 module.exports.removeQuestionFromQuiz = function (quizID, questionID) {
   return new Promise(function (resolve, reject) {
-    Quiz.findById(quizID)
+    oldQuiz
+      .findById(quizID)
       .exec()
       .then((quiz) => {
         if (!quiz) {
