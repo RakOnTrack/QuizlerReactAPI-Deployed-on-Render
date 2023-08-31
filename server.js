@@ -5,6 +5,19 @@ const dotenv = require("dotenv");
 dotenv.config();
 const quizService = require("./quiz-service");
 
+// const express = require('express');
+// const { Configuration, OpenAIApi } = require('openai');
+
+// // Configure OpenAI
+// const openai = new OpenAIApi({ apiKey: process.env.OPENAI_API_KEY });
+
+// Old
+const OpenAI = require("openai");
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY, // This is also the default, can be omitted
+});
+
 const HTTP_PORT = process.env.PORT || 8080;
 
 app.use(express.json());
@@ -25,6 +38,69 @@ app.post("/api/quizzes/", (req, res) => {
     .catch((msg) => {
       res.status(422).json({ error: msg });
     });
+});
+
+function generatePrompt(studyTopic) {
+  return `
+  Make me a multiple-choice quiz with 2 questions about ${studyTopic}. The quiz should be in this JSON format:
+
+  {
+    "quizTitle": STRING,
+    "questions": [
+      {
+        "questionTitle": "",
+        "correct_answer": "",
+        "incorrect_answers": []
+      },
+      ...
+    ]
+  }
+`;
+}
+
+// Define a route to generate the quiz
+app.post("/api/quizzes/OpenAI", async (req, res) => {
+  const { quizTopic } = req.body;
+
+  console.error(quizTopic);
+  try {
+    if (!quizTopic || quizTopic.trim().length === 0) {
+      return res
+        .status(400)
+        .json({ error: "Please provide a valid quiz topic." });
+    }
+
+    const completion = await openai.completions.create({
+      model: "text-davinci-003",
+      prompt: generatePrompt(quizTopic),
+      temperature: 1,
+      max_tokens: 2000,
+    });
+
+    const completionText = completion.choices[0].text;
+    const formattedResponse = JSON.stringify({ result: completionText });
+    // const formattedResponse = ({  completionText });
+    console.log("completion:");
+    console.log(completion.choices[0]);
+    console.log(completion.choices[0].text);
+
+    // quizService.addQuiz using completion.choices[0].text as quizData.
+    quizService
+      .addQuiz(formattedResponse)
+      .then((data) => {
+        res.json(data);
+      })
+      .catch((msg) => {
+        res.status(422).json({ error: msg });
+      });
+
+    res.status(200).json(formattedResponse);
+  } catch (error) {
+    console.error(error);
+    res
+      .status(500)
+      .json({ error: "An error occurred during quiz generation." });
+  }
 });
 
 //get all quizzes
