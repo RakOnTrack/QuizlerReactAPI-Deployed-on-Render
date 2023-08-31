@@ -1,0 +1,13 @@
+  Make me a multiple-choice quiz with 10 questions about ${studyTopic}. The quiz should be in this JSON format:
+
+  {
+    "quizTitle": STRING,
+    "questions": [
+      {
+        "questionTitle": "",
+        "correct_answer": "",
+        "incorrect_answers": []
+      },
+      ...
+    ]
+  }

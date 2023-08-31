@@ -28,17 +28,6 @@ const newQuizSchema = new mongoose.Schema({
     default: false,
   },
 });
-const quizSchema = new mongoose.Schema({
-  quizTitle: String,
-
-  questions: [
-    {
-      questionTitle: String,
-      correct_answer: String,
-      incorrect_answers: [String],
-    },
-  ],
-});
 
 let Question;
 let Quiz;
@@ -61,8 +50,9 @@ module.exports.connect = function () {
 
 // CRUD routes:
 
-// Create
+// QUIZ ROUTES
 
+// Create
 // add quiz
 module.exports.addQuiz = function (quizData) {
   return new Promise(function (resolve, reject) {
@@ -96,52 +86,9 @@ module.exports.addQuiz = function (quizData) {
   });
 };
 
-// add question
-module.exports.addQuestion = function (quizID, questionBody) {
-  return new Promise(function (resolve, reject) {
-    const { questionTitle, correct_answer, incorrect_answers } = questionBody;
-
-    if (!questionTitle || !correct_answer || !incorrect_answers) {
-      reject("Invalid question data.");
-    } else {
-      // Create the new question document
-      const newQuestion = new Question({
-        questionTitle,
-        correct_answer,
-        incorrect_answers,
-      });
-
-      newQuestion
-        .save() // Save the new question
-        .then((savedQuestion) => {
-          // Find the quiz by ID and update the questions array
-          Quiz.findByIdAndUpdate(
-            quizID,
-            { $push: { questions: savedQuestion._id } },
-            { new: true }
-          )
-            .exec()
-            .then(() => {
-              // Get the updated quiz data using getQuiz function
-              return module.exports.getQuiz(quizID);
-            })
-            .then((updatedQuiz) => {
-              resolve(updatedQuiz);
-            })
-            .catch((err) => {
-              reject(`Unable to update questions for quiz with ID: ${quizID}`);
-            });
-        })
-        .catch((err) => {
-          reject(`Error saving new question: ${err}`);
-        });
-    }
-  });
-};
-
 // Read
 
-// get all quizzes. this just gets the quiztitle, _id, number of questions, and number of correct questions
+// get all quizzes. this just gets the quizTitle, _id, number of questions, and number of correct questions
 module.exports.getQuizzes = function () {
   return new Promise(function (resolve, reject) {
     Quiz.aggregate([
@@ -206,7 +153,7 @@ module.exports.getQuiz = function (quizID) {
 };
 
 // Update
-// update quiz
+// rename quiz
 module.exports.renameQuiz = function (quizID, newTitle) {
   return new Promise(function (resolve, reject) {
     if (!newTitle) {
@@ -227,6 +174,49 @@ module.exports.renameQuiz = function (quizID, newTitle) {
       .catch((err) => {
         reject(`Error updating quiz title: ${err}`);
       });
+  });
+};
+
+// add question to quiz
+module.exports.addQuestion = function (quizID, questionBody) {
+  return new Promise(function (resolve, reject) {
+    const { questionTitle, correct_answer, incorrect_answers } = questionBody;
+
+    if (!questionTitle || !correct_answer || !incorrect_answers) {
+      reject("Invalid question data.");
+    } else {
+      // Create the new question document
+      const newQuestion = new Question({
+        questionTitle,
+        correct_answer,
+        incorrect_answers,
+      });
+
+      newQuestion
+        .save() // Save the new question
+        .then((savedQuestion) => {
+          // Find the quiz by ID and update the questions array
+          Quiz.findByIdAndUpdate(
+            quizID,
+            { $push: { questions: savedQuestion._id } },
+            { new: true }
+          )
+            .exec()
+            .then(() => {
+              // Get the updated quiz data using getQuiz function
+              return module.exports.getQuiz(quizID);
+            })
+            .then((updatedQuiz) => {
+              resolve(updatedQuiz);
+            })
+            .catch((err) => {
+              reject(`Unable to update questions for quiz with ID: ${quizID}`);
+            });
+        })
+        .catch((err) => {
+          reject(`Error saving new question: ${err}`);
+        });
+    }
   });
 };
 
@@ -258,6 +248,8 @@ module.exports.restartQuiz = function (quizID) {
       });
   });
 };
+
+
 
 // save study results. uses array of question IDs to change specific questions isCorrect to true
 module.exports.markQuestionsCorrect = function (quizID, questionIDs) {
@@ -292,6 +284,41 @@ module.exports.markQuestionsCorrect = function (quizID, questionIDs) {
   });
 };
 
+// Delete
+// remove quiz
+module.exports.deleteQuiz = function (quizID) {
+  return new Promise(function (resolve, reject) {
+    // Find the quiz by ID to get the list of question references
+    Quiz.findById(quizID)
+      .exec()
+      .then((quiz) => {
+        if (!quiz) {
+          reject(`Quiz with ID ${quizID} not found.`);
+          return;
+        }
+
+        const questionIDs = quiz.questions; // Get the list of question references
+
+        // Delete the associated questions first
+        return Question.deleteMany({ _id: { $in: questionIDs } }).exec();
+      })
+      .then(() => {
+        // After deleting questions, remove the quiz
+        return Quiz.findByIdAndRemove(quizID).exec();
+      })
+      .then(() => {
+        resolve(
+          `Quiz with ID ${quizID} and associated questions removed successfully.`
+        );
+      })
+      .catch((err) => {
+        reject(`Unable to remove quiz with ID ${quizID}: ${err}`);
+      });
+  });
+};
+
+// QUESTION ROUTES
+
 // update question
 module.exports.updateQuestion = function (questionID, questionBody) {
   return new Promise(function (resolve, reject) {
@@ -323,39 +350,6 @@ module.exports.updateQuestion = function (questionID, questionBody) {
           reject(`Error updating question with ID ${questionID}: ${err}`);
         });
     }
-  });
-};
-
-// Delete
-// remove quiz
-module.exports.removeQuiz = function (quizID) {
-  return new Promise(function (resolve, reject) {
-    // Find the quiz by ID to get the list of question references
-    Quiz.findById(quizID)
-      .exec()
-      .then((quiz) => {
-        if (!quiz) {
-          reject(`Quiz with ID ${quizID} not found.`);
-          return;
-        }
-
-        const questionIDs = quiz.questions; // Get the list of question references
-
-        // Delete the associated questions first
-        return Question.deleteMany({ _id: { $in: questionIDs } }).exec();
-      })
-      .then(() => {
-        // After deleting questions, remove the quiz
-        return Quiz.findByIdAndRemove(quizID).exec();
-      })
-      .then(() => {
-        resolve(
-          `Quiz with ID ${quizID} and associated questions removed successfully.`
-        );
-      })
-      .catch((err) => {
-        reject(`Unable to remove quiz with ID ${quizID}: ${err}`);
-      });
   });
 };
 

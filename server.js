@@ -15,7 +15,19 @@ app.get("/", (req, res) => {
   res.redirect("/api/quizzes");
 });
 
-//get all quizzez
+//add quiz
+app.post("/api/quizzes/", (req, res) => {
+  quizService
+    .addQuiz(req.body)
+    .then((data) => {
+      res.json(data);
+    })
+    .catch((msg) => {
+      res.status(422).json({ error: msg });
+    });
+});
+
+//get all quizzes
 app.get("/api/quizzes", (req, res) => {
   quizService
     .getQuizzes()
@@ -39,12 +51,10 @@ app.get("/api/quizzes/:id", (req, res) => {
     });
 });
 
-
-
-//restart quiz
-app.put("/api/quizzes/restart/:id", (req, res) => {
+//rename quiz
+app.put("/api/quizzes/:id", (req, res) => {
   quizService
-    .restartQuiz(req.params.id)
+    .renameQuiz(req.params.id, req.body.quizTitle)
     .then((data) => {
       res.json(data);
     })
@@ -65,38 +75,10 @@ app.put("/api/quizzes/question/:id", (req, res) => {
     });
 });
 
-//add quiz
-app.post("/api/quizzes/", (req, res) => {
+//restart quiz
+app.put("/api/quizzes/restart/:id", (req, res) => {
   quizService
-    .addQuiz(req.body)
-    .then((data) => {
-      res.json(data);
-    })
-    .catch((msg) => {
-      res.status(422).json({ error: msg });
-    });
-});
-
-//rename quiz
-app.put("/api/quizzes/:id", (req, res) => {
-  quizService
-    .renameQuiz(req.params.id, req.body.quizTitle)
-    .then((data) => {
-      res.json(data);
-    })
-    .catch((msg) => {
-      res.status(422).json({ error: msg });
-    });
-});
-
-
-//update question
-app.put("/api/quizzes/questions/:questionId", (req, res) => {
-  const quizId = req.params.quizId;
-  const questionId = req.params.questionId;
-
-  quizService
-    .updateQuestion(questionId, req.body)
+    .restartQuiz(req.params.id)
     .then((data) => {
       res.json(data);
     })
@@ -121,6 +103,21 @@ app.put("/api/quizzes/update/:id", (req, res) => {
 app.delete("/api/quizzes/:id", (req, res) => {
   quizService
     .removeQuiz(req.params.id)
+    .then((data) => {
+      res.json(data);
+    })
+    .catch((msg) => {
+      res.status(422).json({ error: msg });
+    });
+});
+
+//update question
+app.put("/api/quizzes/questions/:questionId", (req, res) => {
+  const quizId = req.params.quizId;
+  const questionId = req.params.questionId;
+
+  quizService
+    .updateQuestion(questionId, req.body)
     .then((data) => {
       res.json(data);
     })
