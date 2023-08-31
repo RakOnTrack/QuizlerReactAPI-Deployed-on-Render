@@ -72,8 +72,11 @@ module.exports.addQuiz = function (quizData) {
           let newestQuiz = new Quiz({ quizTitle, questions: questionIds });
           return newestQuiz.save();
         })
-        .then(() => {
-          resolve("Quiz " + quizData.quizTitle + " successfully added");
+        .then((savedQuiz) => {
+          return module.exports.getQuiz(savedQuiz._id); // Call getQuiz with the newly saved quiz ID
+        })
+        .then((retrievedQuiz) => {
+          resolve(retrievedQuiz); // Resolve with the retrieved quiz data
         })
         .catch((err) => {
           if (err.code === 11000) {
@@ -249,8 +252,6 @@ module.exports.restartQuiz = function (quizID) {
   });
 };
 
-
-
 // save study results. uses array of question IDs to change specific questions isCorrect to true
 module.exports.markQuestionsCorrect = function (quizID, questionIDs) {
   return new Promise(function (resolve, reject) {
@@ -307,9 +308,13 @@ module.exports.deleteQuiz = function (quizID) {
         return Quiz.findByIdAndRemove(quizID).exec();
       })
       .then(() => {
-        resolve(
-          `Quiz with ID ${quizID} and associated questions removed successfully.`
-        );
+        // resolve(
+        //   `Quiz with ID ${quizID} and associated questions removed successfully.`
+        // );
+        return module.exports.getQuizzes();
+      })
+      .then((retrievedQuiz) => {
+        resolve(retrievedQuiz); // Resolve with the retrieved quiz data
       })
       .catch((err) => {
         reject(`Unable to remove quiz with ID ${quizID}: ${err}`);

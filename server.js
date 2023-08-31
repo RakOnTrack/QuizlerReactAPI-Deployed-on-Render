@@ -5,13 +5,7 @@ const dotenv = require("dotenv");
 dotenv.config();
 const quizService = require("./quiz-service");
 
-// const express = require('express');
-// const { Configuration, OpenAIApi } = require('openai');
 
-// // Configure OpenAI
-// const openai = new OpenAIApi({ apiKey: process.env.OPENAI_API_KEY });
-
-// Old
 const OpenAI = require("openai");
 
 const openai = new OpenAI({
@@ -40,9 +34,9 @@ app.post("/api/quizzes/", (req, res) => {
     });
 });
 
-function generatePrompt(studyTopic) {
+function generatePrompt(studyTopic, questionCount) {
   return `
-  Make me a multiple-choice quiz with 2 questions about ${studyTopic}. The quiz should be in this JSON format:
+  Make me a multiple-choice quiz with ${questionCount} questions about ${studyTopic}. The quiz should be in this JSON format:
 
   {
     "quizTitle": STRING,
@@ -59,8 +53,8 @@ function generatePrompt(studyTopic) {
 }
 
 // Define a route to generate the quiz
-app.post("/api/quizzes/OpenAI", async (req, res) => {
-  const { quizTopic } = req.body;
+app.post("/api/quizzes/openai", async (req, res) => {
+  const { quizTopic, questionCount } = req.body;
 
   console.error(quizTopic);
   try {
@@ -72,19 +66,15 @@ app.post("/api/quizzes/OpenAI", async (req, res) => {
 
     const completion = await openai.completions.create({
       model: "text-davinci-003",
-      prompt: generatePrompt(quizTopic),
+      prompt: generatePrompt(quizTopic, questionCount),
       temperature: 1,
       max_tokens: 2000,
     });
 
     const completionText = completion.choices[0].text;
-    const formattedResponse = JSON.stringify({ result: completionText });
-    // const formattedResponse = ({  completionText });
-    console.log("completion:");
-    console.log(completion.choices[0]);
-    console.log(completion.choices[0].text);
+    const formattedResponse = JSON.parse(completionText); // Parse the JSON string
 
-    // quizService.addQuiz using completion.choices[0].text as quizData.
+    // quizService.addQuiz using formattedResponse as quizData.
     quizService
       .addQuiz(formattedResponse)
       .then((data) => {
@@ -93,8 +83,6 @@ app.post("/api/quizzes/OpenAI", async (req, res) => {
       .catch((msg) => {
         res.status(422).json({ error: msg });
       });
-
-    res.status(200).json(formattedResponse);
   } catch (error) {
     console.error(error);
     res
@@ -178,7 +166,7 @@ app.put("/api/quizzes/update/:id", (req, res) => {
 // remove quiz
 app.delete("/api/quizzes/:id", (req, res) => {
   quizService
-    .removeQuiz(req.params.id)
+    .deleteQuiz(req.params.id)
     .then((data) => {
       res.json(data);
     })
