@@ -4,13 +4,9 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 dotenv.config();
 const quizService = require("./quiz-service");
+const userService = require("./user-service");
 
 
-const OpenAI = require("openai");
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY, // This is also the default, can be omitted
-});
 
 const HTTP_PORT = process.env.PORT || 8080;
 
@@ -34,62 +30,19 @@ app.post("/api/quizzes/", (req, res) => {
     });
 });
 
-function generatePrompt(studyTopic, questionCount) {
-  return `
-  Make me a multiple-choice quiz with ${questionCount} questions about ${studyTopic}. The quiz should be in this JSON format:
-
-  {
-    "quizTitle": STRING,
-    "questions": [
-      {
-        "questionTitle": "",
-        "correct_answer": "",
-        "incorrect_answers": []
-      },
-      ...
-    ]
-  }
-`;
-}
-
-// Define a route to generate the quiz
+// add a quiz using openai api to generate it
 app.post("/api/quizzes/openai", async (req, res) => {
-  const { quizTopic, questionCount } = req.body;
-
-  console.error(quizTopic);
-  try {
-    if (!quizTopic || quizTopic.trim().length === 0) {
-      return res
-        .status(400)
-        .json({ error: "Please provide a valid quiz topic." });
-    }
-
-    const completion = await openai.completions.create({
-      model: "text-davinci-003",
-      prompt: generatePrompt(quizTopic, questionCount),
-      temperature: 1,
-      max_tokens: 2000,
+  quizService
+    .addQuizWithAI(req.body)
+    .then((data) => {
+      res.json(data);
+    })
+    .catch((msg) => {
+      res.status(422).json({ error: msg });
     });
-
-    const completionText = completion.choices[0].text;
-    const formattedResponse = JSON.parse(completionText); // Parse the JSON string
-
-    // quizService.addQuiz using formattedResponse as quizData.
-    quizService
-      .addQuiz(formattedResponse)
-      .then((data) => {
-        res.json(data);
-      })
-      .catch((msg) => {
-        res.status(422).json({ error: msg });
-      });
-  } catch (error) {
-    console.error(error);
-    res
-      .status(500)
-      .json({ error: "An error occurred during quiz generation." });
-  }
 });
+
+
 
 //get all quizzes
 app.get("/api/quizzes", (req, res) => {
@@ -205,14 +158,101 @@ app.delete("/api/quizzes/questions/:questionId", (req, res) => {
     });
 });
 
-quizService
-  .connect()
+app.post("/api/user/register", (req, res) => {
+  userService
+    .registerUser(req.body)
+    .then((msg) => {
+      res.json({ message: msg });
+    })
+    .catch((msg) => {
+      res.status(422).json({ message: msg });
+    });
+});
+
+app.post("/api/user/login", (req, res) => {
+  userService
+    .checkUser(req.body)
+    .then((user) => {
+      res.json({ message: "login successful" });
+    })
+    .catch((msg) => {
+      res.status(422).json({ message: msg });
+    });
+});
+
+// app.get("/api/user/favourites", (req, res) => {
+//   userService
+//     .getFavourites(req.user._id)
+//     .then((data) => {
+//       res.json(data);
+//     })
+//     .catch((msg) => {
+//       res.status(422).json({ error: msg });
+//     });
+// });
+
+// app.put("/api/user/favourites/:id", (req, res) => {
+//   userService
+//     .addFavourite(req.user._id, req.params.id)
+//     .then((data) => {
+//       res.json(data);
+//     })
+//     .catch((msg) => {
+//       res.status(422).json({ error: msg });
+//     });
+// });
+
+// app.delete("/api/user/favourites/:id", (req, res) => {
+//   userService
+//     .removeFavourite(req.user._id, req.params.id)
+//     .then((data) => {
+//       res.json(data);
+//     })
+//     .catch((msg) => {
+//       res.status(422).json({ error: msg });
+//     });
+// });
+
+// app.get("/api/user/history", (req, res) => {
+//   userService
+//     .getHistory(req.user._id)
+//     .then((data) => {
+//       res.json(data);
+//     })
+//     .catch((msg) => {
+//       res.status(422).json({ error: msg });
+//     });
+// });
+
+// app.put("/api/user/history/:id", (req, res) => {
+//   userService
+//     .addHistory(req.user._id, req.params.id)
+//     .then((data) => {
+//       res.json(data);
+//     })
+//     .catch((msg) => {
+//       res.status(422).json({ error: msg });
+//     });
+// });
+
+// app.delete("/api/user/history/:id", (req, res) => {
+//   userService
+//     .removeHistory(req.user._id, req.params.id)
+//     .then((data) => {
+//       res.json(data);
+//     })
+//     .catch((msg) => {
+//       res.status(422).json({ error: msg });
+//     });
+// });
+
+Promise.all([quizService.connect(), userService.connect()])
   .then(() => {
     app.listen(HTTP_PORT, () => {
       console.log("API listening on: " + HTTP_PORT);
     });
   })
   .catch((err) => {
-    console.log("unable to start the server: " + err);
+    console.log("Unable to start the server: " + err);
     process.exit();
   });

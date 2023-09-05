@@ -1,5 +1,10 @@
 const mongoose = require("mongoose");
-const bcrypt = require("bcryptjs");
+
+const OpenAI = require("openai");
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY, // This is also the default, can be omitted
+});
 
 let mongoDBConnectionString = process.env.MONGO_URL;
 
@@ -88,6 +93,58 @@ module.exports.addQuiz = function (quizData) {
     }
   });
 };
+
+module.exports.addQuizWithAI = async function (req) {
+  return new Promise(async (resolve, reject) => { // Return a promise
+    const { quizTopic, questionCount } = req;
+
+    console.error(quizTopic);
+
+    try {
+      if (!quizTopic || quizTopic.trim().length === 0) {
+        return reject({ status: 400, error: "Please provide a valid quiz topic." });
+      }
+
+      // Use 'await' here to asynchronously wait for the completion
+      const completion = await openai.completions.create({
+        model: "text-davinci-003",
+        prompt: generatePrompt(quizTopic, questionCount),
+        temperature: 1,
+        max_tokens: 2000,
+      });
+
+      const completionText = completion.choices[0].text;
+      const formattedResponse = JSON.parse(completionText); // Parse the JSON string
+
+      // Assuming 'addQuiz' is an asynchronous function that returns a promise
+      const data = await module.exports.addQuiz(formattedResponse);
+
+      resolve(data); // Resolve with the retrieved data
+    } catch (error) {
+      console.error(error);
+      reject({ status: 500, error: "An error occurred during quiz generation." });
+    }
+  });
+};
+
+
+function generatePrompt(studyTopic, questionCount) {
+  return `
+  Make me a multiple-choice quiz with ${questionCount} questions about ${studyTopic}. The quiz should be in this JSON format:
+
+  {
+    "quizTitle": STRING,
+    "questions": [
+      {
+        "questionTitle": "",
+        "correct_answer": "",
+        "incorrect_answers": []
+      },
+      ...
+    ]
+  }
+`;
+}
 
 // Read
 
