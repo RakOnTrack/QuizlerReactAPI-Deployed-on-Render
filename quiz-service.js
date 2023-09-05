@@ -102,7 +102,7 @@ module.exports.addQuizWithAI = async function (req) {
 
     try {
       if (!quizTopic || quizTopic.trim().length === 0) {
-        return reject({ status: 400, error: "Please provide a valid quiz topic." });
+        return reject({ status: 400, error: `Please provide a valid quiz topic.: ${quizTopic}`  });
       }
 
       // Use 'await' here to asynchronously wait for the completion
