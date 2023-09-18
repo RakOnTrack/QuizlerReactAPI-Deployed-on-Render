@@ -28,14 +28,42 @@ const newQuizSchema = new mongoose.Schema({
       ref: "Questions", // Assuming 'Question' is the model name for questions
     },
   ],
+  directory: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Directory", // Reference to the Directory model
+  },
   started: {
     type: Boolean,
     default: false,
   },
 });
 
+const directorySchema = new mongoose.Schema({
+  name: String, // Name of the directory
+  quizzes: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "newQuizzes", // Reference to the Quiz model
+      default: [],
+    },
+  ],
+  subdirectories: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Directory", // Reference to the Directory model itself (for subdirectories)
+      default: [],
+    },
+  ],
+  parentDirectory: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Directory",
+    default: null, // Set the default value to null for no parent directory
+  },
+});
+
 let Question;
 let Quiz;
+let Directory;
 
 module.exports.connect = function () {
   return new Promise(function (resolve, reject) {
@@ -48,6 +76,7 @@ module.exports.connect = function () {
     db.once("open", () => {
       Question = db.model("Questions", questionSchema);
       Quiz = db.model("newQuizzes", newQuizSchema);
+      Directory = db.model("directories", directorySchema);
       resolve();
     });
   });
@@ -61,10 +90,10 @@ module.exports.connect = function () {
 // add quiz
 module.exports.addQuiz = function (quizData) {
   return new Promise(function (resolve, reject) {
-    const { quizTitle, questions } = quizData;
+    const { quizTitle, questions, directoryId } = quizData;
 
-    if (!quizTitle || !questions) {
-      reject("quizTitle or questions not valid.");
+    if (!quizTitle || !questions || !directoryId) {
+      reject("quizTitle, questions, or directoryId not valid.");
     } else {
       const questionsWithoutId = questions.map((question) => {
         const { _id, ...questionWithoutId } = question;
@@ -74,7 +103,11 @@ module.exports.addQuiz = function (quizData) {
       Question.insertMany(questionsWithoutId)
         .then((insertedQuestions) => {
           const questionIds = insertedQuestions.map((question) => question._id);
-          let newestQuiz = new Quiz({ quizTitle, questions: questionIds });
+          let newestQuiz = new Quiz({
+            quizTitle,
+            questions: questionIds,
+            directory: directoryId,
+          });
           return newestQuiz.save();
         })
         .then((savedQuiz) => {
@@ -95,14 +128,18 @@ module.exports.addQuiz = function (quizData) {
 };
 
 module.exports.addQuizWithAI = async function (req) {
-  return new Promise(async (resolve, reject) => { // Return a promise
+  return new Promise(async (resolve, reject) => {
+    // Return a promise
     const { quizTopic, questionCount } = req;
 
     console.error(quizTopic);
 
     try {
       if (!quizTopic || quizTopic.trim().length === 0) {
-        return reject({ status: 400, error: "Please provide a valid quiz topic." });
+        return reject({
+          status: 400,
+          error: "Please provide a valid quiz topic.",
+        });
       }
 
       // Use 'await' here to asynchronously wait for the completion
@@ -122,15 +159,23 @@ module.exports.addQuizWithAI = async function (req) {
       resolve(data); // Resolve with the retrieved data
     } catch (error) {
       console.error(error);
-      reject({ status: 500, error: "An error occurred during quiz generation." });
+      reject({
+        status: 500,
+        error: "An error occurred during quiz generation.",
+      });
     }
   });
 };
 
-
-function generatePrompt(studyTopic, questionCount) {
+function generatePrompt(studyContent, questionCount) {
   return `
-  Make me a multiple-choice quiz with ${questionCount} questions about ${studyTopic}. The quiz should be in this JSON format:
+  Make me a multiple-choice quiz with ${questionCount} questions about this content:
+  
+  
+  ${studyContent}. 
+  
+  
+  The quiz should be in this JSON format:
 
   {
     "quizTitle": STRING,
@@ -447,6 +492,30 @@ module.exports.deleteQuestion = function (questionID) {
       })
       .catch((err) => {
         reject(`Error deleting question with ID ${questionID}: ${err}`);
+      });
+  });
+};
+
+module.exports.createDirectory = function (directoryData) {
+  return new Promise(function (resolve, reject) {
+    const { name, parentDirectoryId, quizzes } = directoryData;
+
+    const newDirectory = new Directory({
+      name,
+      quizzes, // Array of quiz _ids belonging to this directory
+    });
+
+    if (parentDirectoryId) {
+      newDirectory.parentDirectory = parentDirectoryId; // Set the parent directory if applicable
+    }
+
+    newDirectory
+      .save()
+      .then((savedDirectory) => {
+        resolve(savedDirectory);
+      })
+      .catch((err) => {
+        reject("Error creating directory: " + err);
       });
   });
 };

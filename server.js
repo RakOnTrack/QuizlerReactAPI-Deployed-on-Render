@@ -6,8 +6,6 @@ dotenv.config();
 const quizService = require("./quiz-service");
 const userService = require("./user-service");
 
-
-
 const HTTP_PORT = process.env.PORT || 8080;
 
 app.use(express.json());
@@ -41,8 +39,6 @@ app.post("/api/quizzes/openai", async (req, res) => {
       res.status(422).json({ error: msg });
     });
 });
-
-
 
 //get all quizzes
 app.get("/api/quizzes", (req, res) => {
@@ -174,6 +170,17 @@ app.post("/api/user/login", (req, res) => {
     .checkUser(req.body)
     .then((user) => {
       res.json({ message: "login successful" });
+    })
+    .catch((msg) => {
+      res.status(422).json({ message: msg });
+    });
+});
+
+app.post("/api/directory", (req, res) => {
+  quizService
+    .createDirectory(req.body)
+    .then((dir) => {
+      res.json({ message: "created dir successful" });
     })
     .catch((msg) => {
       res.status(422).json({ message: msg });
