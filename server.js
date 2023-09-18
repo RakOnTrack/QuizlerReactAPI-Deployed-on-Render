@@ -186,6 +186,16 @@ app.post("/api/directory", (req, res) => {
       res.status(422).json({ message: msg });
     });
 });
+app.get("/api/directory", (req, res) => {
+  quizService
+    .readDirectory("6508bbf7a027061a12c9c8e4")
+    .then((dir) => {
+      res.json({ message: "read dir successful" });
+    })
+    .catch((msg) => {
+      res.status(422).json({ message: msg });
+    });
+});
 
 // app.get("/api/user/favourites", (req, res) => {
 //   userService

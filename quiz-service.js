@@ -57,7 +57,7 @@ const directorySchema = new mongoose.Schema({
   parentDirectory: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Directory",
-    default: null, // Set the default value to null for no parent directory
+    default: "6508bbf7a027061a12c9c8e4", // Set the default value to null for no parent directory
   },
 });
 
@@ -95,6 +95,7 @@ module.exports.addQuiz = function (quizData) {
     if (!quizTitle || !questions || !directoryId) {
       reject("quizTitle, questions, or directoryId not valid.");
     } else {
+      // sept 18th i think i forgot to get rid of this!
       const questionsWithoutId = questions.map((question) => {
         const { _id, ...questionWithoutId } = question;
         return questionWithoutId;
@@ -108,10 +109,19 @@ module.exports.addQuiz = function (quizData) {
             questions: questionIds,
             directory: directoryId,
           });
+
           return newestQuiz.save();
         })
         .then((savedQuiz) => {
-          return module.exports.getQuiz(savedQuiz._id); // Call getQuiz with the newly saved quiz ID
+          // Store the _id of the newly created quiz
+          const savedQuizId = savedQuiz._id;
+
+          // Add the new quiz's _id to the directory's quizzes array
+          return Directory.findByIdAndUpdate(directoryId, {
+            $push: { quizzes: savedQuizId },
+          }).then(() => {
+            return module.exports.getQuiz(savedQuizId); // Call getQuiz with the newly saved quiz ID
+          });
         })
         .then((retrievedQuiz) => {
           resolve(retrievedQuiz); // Resolve with the retrieved quiz data
@@ -497,25 +507,55 @@ module.exports.deleteQuestion = function (questionID) {
 };
 
 module.exports.createDirectory = function (directoryData) {
-  return new Promise(function (resolve, reject) {
-    const { name, parentDirectoryId, quizzes } = directoryData;
+  return new Promise(async function (resolve, reject) {
+    const { name, parentDirectoryId } = directoryData;
 
-    const newDirectory = new Directory({
-      name,
-      quizzes, // Array of quiz _ids belonging to this directory
-    });
-
-    if (parentDirectoryId) {
-      newDirectory.parentDirectory = parentDirectoryId; // Set the parent directory if applicable
-    }
-
-    newDirectory
-      .save()
-      .then((savedDirectory) => {
-        resolve(savedDirectory);
-      })
-      .catch((err) => {
-        reject("Error creating directory: " + err);
+    try {
+      // Create a new directory with the provided name and parent directory ID
+      const newDirectory = new Directory({
+        name,
+        parentDirectory: parentDirectoryId, // Set the parent directory if applicable
       });
+
+      // Save the new directory
+      const savedDirectory = await newDirectory.save();
+
+      // Update the parent directory's subdirectories array
+      if (parentDirectoryId) {
+        const parentDirectory = await Directory.findById(parentDirectoryId);
+        if (parentDirectory) {
+          parentDirectory.subdirectories.push(savedDirectory._id);
+          await parentDirectory.save();
+        }
+      }
+
+      resolve(savedDirectory);
+    } catch (error) {
+      reject("Error creating directory: " + error);
+    }
+  });
+};
+
+module.exports.readDirectory = function (directoryData) {
+  return new Promise(function (resolve, reject) {
+    const { directoryId } = directoryData;
+    try {
+      // Find the directory by its ID
+      const directory = Directory.findById(directoryId);
+
+      if (!directory) {
+        throw new Error("Directory not found");
+      }
+
+      // Find all the quizzes in the directory
+      const quizzes = Quiz.find({ directory: directoryId });
+
+      // Find all the routes in the directory
+      const routes = Directory.find({ directory: directoryId });
+
+      return { directory, quizzes, routes };
+    } catch (error) {
+      throw error;
+    }
   });
 };
