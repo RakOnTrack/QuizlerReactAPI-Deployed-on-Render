@@ -52,6 +52,18 @@ app.get("/api/quizzes", (req, res) => {
     });
 });
 
+//get quizzes based on search by quizTitle
+app.get("/api/quizzes?quizTitle=:quizTitle", (req, res) => {
+  quizService
+    .getQuizByTitle(req.params.quizTitle)
+    .then((data) => {
+      res.json(data);
+    })
+    .catch((msg) => {
+      res.status(422).json({ error: msg });
+    });
+});
+
 //get specific Quiz
 app.get("/api/quizzes/:id", (req, res) => {
   quizService

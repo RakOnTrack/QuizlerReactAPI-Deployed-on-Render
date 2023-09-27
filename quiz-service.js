@@ -235,7 +235,7 @@ module.exports.getQuizzes = function () {
 // eventually we'll have to make a condition where if the quiz has more than 50 questions,
 // it first only add the first half, and then a second half using another call
 
-// get a single quiz.
+// get a single quiz by Id
 module.exports.getQuiz = function (quizID) {
   return new Promise(function (resolve, reject) {
     Quiz.findById(quizID)
@@ -253,6 +253,27 @@ module.exports.getQuiz = function (quizID) {
       })
       .catch((err) => {
         reject(`Unable to retrieve quiz: ${err}`);
+      });
+  });
+};
+
+// get quizzes by title
+// TODO: need to test if this even works
+module.exports.getQuizByTitle = function (quizTitle) {
+  return new Promise(function (resolve, reject) {
+    Quiz.aggregate([
+      {
+        $match: {
+          quizTitle : quizTitle
+        },
+      }
+    ])
+      .exec()
+      .then((quizzes) => {
+        resolve(quizzes);
+      })
+      .catch((err) => {
+        reject(`Unable to retrieve quizzes with title ${quizTitle}: ${err}`);
       });
   });
 };
