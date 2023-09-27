@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-
 const OpenAI = require("openai");
 
 const openai = new OpenAI({
@@ -31,6 +30,7 @@ const newQuizSchema = new mongoose.Schema({
   directory: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Directory", // Reference to the Directory model
+    default: process.env.DEFAULT_ROOT_DIRECTORY, // Set the default value to homeroute for no parent directory
   },
   started: {
     type: Boolean,
@@ -57,7 +57,7 @@ const directorySchema = new mongoose.Schema({
   parentDirectory: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Directory",
-    default: "6508bbf7a027061a12c9c8e4", // Set the default value to null for no parent directory
+    default: process.env.DEFAULT_ROOT_DIRECTORY, // Set the default value to homeroute for no parent directory
   },
 });
 
@@ -92,35 +92,36 @@ module.exports.addQuiz = function (quizData) {
   return new Promise(function (resolve, reject) {
     const { quizTitle, questions, directoryId } = quizData;
 
-    if (!quizTitle || !questions || !directoryId) {
-      reject("quizTitle, questions, or directoryId not valid.");
+    if (!quizTitle || !questions) {
+      reject("quizTitle, questions, not valid.");
     } else {
-      // sept 18th i think i forgot to get rid of this!
-      const questionsWithoutId = questions.map((question) => {
-        const { _id, ...questionWithoutId } = question;
-        return questionWithoutId;
-      });
+      // // sept 18th i think i forgot to get rid of this!
+      // const questionsWithoutId = questions.map((question) => {
+      //   const { _id, ...questionWithoutId } = question;
+      //   return questionWithoutId;
+      // });
 
-      Question.insertMany(questionsWithoutId)
+      Question.insertMany(questions)
         .then((insertedQuestions) => {
           const questionIds = insertedQuestions.map((question) => question._id);
           let newestQuiz = new Quiz({
             quizTitle,
             questions: questionIds,
-            directory: directoryId,
+            
+            directory: directoryId || process.env.DEFAULT_ROOT_DIRECTORY,
           });
-
+          // newestQuiz.
           return newestQuiz.save();
         })
         .then((savedQuiz) => {
           // Store the _id of the newly created quiz
-          const savedQuizId = savedQuiz._id;
+          // const savedQuizId = ;
 
           // Add the new quiz's _id to the directory's quizzes array
-          return Directory.findByIdAndUpdate(directoryId, {
-            $push: { quizzes: savedQuizId },
+          return Directory.findByIdAndUpdate(savedQuiz.directory, {
+            $push: { quizzes: savedQuiz._id },
           }).then(() => {
-            return module.exports.getQuiz(savedQuizId); // Call getQuiz with the newly saved quiz ID
+            return module.exports.getQuiz(savedQuiz._id); // Call getQuiz with the newly saved quiz ID
           });
         })
         .then((retrievedQuiz) => {
@@ -401,13 +402,20 @@ module.exports.markQuestionsCorrect = function (quizID, questionIDs) {
 // remove quiz
 module.exports.deleteQuiz = function (quizID) {
   return new Promise(function (resolve, reject) {
-    // Find the quiz by ID to get the list of question references
+    let parentDirectoryID; // Store the parent directory's ID if it exists
+
+    // Find the quiz by ID to check if it has a parent directory
     Quiz.findById(quizID)
       .exec()
       .then((quiz) => {
         if (!quiz) {
           reject(`Quiz with ID ${quizID} not found.`);
           return;
+        }
+
+        // Check if the quiz has a parent directory
+        if (quiz.directory) {
+          parentDirectoryID = quiz.directory; // Store the parent directory's ID
         }
 
         const questionIDs = quiz.questions; // Get the list of question references
@@ -420,9 +428,15 @@ module.exports.deleteQuiz = function (quizID) {
         return Quiz.findByIdAndRemove(quizID).exec();
       })
       .then(() => {
-        // resolve(
-        //   `Quiz with ID ${quizID} and associated questions removed successfully.`
-        // );
+        if (parentDirectoryID) {
+          // If the quiz had a parent directory, find and update it
+          return Directory.findByIdAndUpdate(parentDirectoryID, {
+            $pull: { quizzes: quizID }, // Remove the quiz ID from quizzes array
+          }).exec();
+        }
+        return Promise.resolve(); // If no parent directory, resolve immediately
+      })
+      .then(() => {
         return module.exports.getQuizzes();
       })
       .then((retrievedQuiz) => {
@@ -536,26 +550,183 @@ module.exports.createDirectory = function (directoryData) {
   });
 };
 
-module.exports.readDirectory = function (directoryData) {
-  return new Promise(function (resolve, reject) {
-    const { directoryId } = directoryData;
+module.exports.readDirectory = function (directoryId) {
+  return new Promise(async function (resolve, reject) {
     try {
       // Find the directory by its ID
-      const directory = Directory.findById(directoryId);
+      const directory = await Directory.findById(directoryId);
 
       if (!directory) {
         throw new Error("Directory not found");
       }
 
       // Find all the quizzes in the directory
-      const quizzes = Quiz.find({ directory: directoryId });
+      const quizzes = await Quiz.find({ directory: directoryId });
 
       // Find all the routes in the directory
-      const routes = Directory.find({ directory: directoryId });
+      const routes = await Directory.find({ parentDirectory: directoryId });
 
-      return { directory, quizzes, routes };
+      resolve({ directory, quizzes, routes });
     } catch (error) {
-      throw error;
+      reject(error); // Reject the promise with the error
+    }
+  });
+};
+
+// Function for moving a directory
+module.exports.moveDirectory = function (directoryId, newParentId) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const directory = await Directory.findById(directoryId);
+
+      if (directoryId == process.env.DEFAULT_ROOT_DIRECTORY) {
+        throw new Error("Cannot move route directory.");
+      }
+
+      if (!directory) {
+        throw new Error("Directory not found");
+      }
+
+      directory.parentDirectory = newParentId;
+      await directory.save();
+      resolve();
+    } catch (error) {
+      reject(error);
+    }
+  });
+};
+
+// Function for renaming a directory
+module.exports.renameDirectory = function (directoryId, newName) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const directory = await Directory.findById(directoryId);
+
+      if (!directory) {
+        reject(new Error("Directory not found"));
+        return;
+      }
+
+      // Implement the validation and logic here
+
+      await directory.save();
+      resolve();
+    } catch (error) {
+      reject(error);
+    }
+  });
+};
+
+// Function for switching the order of quizzes and subdirectories in a directory
+module.exports.switchOrder = function (directoryId, quizIds, subdirectoryIds) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      // Find the directory by its ID
+      const directory = await Directory.findById(directoryId);
+
+      if (!directory) {
+        throw new Error("Directory not found");
+      }
+
+      // Validate the request body
+      if (!Array.isArray(quizIds) || !Array.isArray(subdirectoryIds)) {
+        throw new Error("Invalid request body");
+      }
+
+      // Check that the arrays are the same length as the original arrays
+      if (
+        quizIds.length !== directory.quizzes.length ||
+        subdirectoryIds.length !== directory.subdirectories.length
+      ) {
+        throw new Error("Arrays must be the same length as the original");
+      }
+
+      // Check that each _id in quizIds exists in the original quizzes array
+      for (const quizId of quizIds) {
+        if (!directory.quizzes.includes(quizId)) {
+          throw new Error(
+            `Quiz with ID ${quizId} not found in original quizzes`
+          );
+        }
+      }
+
+      // Check that each _id in subdirectoryIds exists in the original subdirectories array
+      for (const subdirectoryId of subdirectoryIds) {
+        if (!directory.subdirectories.includes(subdirectoryId)) {
+          throw new Error(
+            `Subdirectory with ID ${subdirectoryId} not found in original subdirectories`
+          );
+        }
+      }
+
+      // Update the order of quizzes and subdirectories
+      directory.quizzes = quizIds;
+      directory.subdirectories = subdirectoryIds;
+
+      // Save the changes
+      await directory.save();
+      resolve();
+    } catch (error) {
+      reject(error);
+    }
+  });
+};
+
+// Function for deleting a directory if it's empty
+module.exports.deleteDirectory = function (directoryId) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const directory = await Directory.findById(directoryId);
+
+      if (!directory) {
+        reject(new Error("Directory not found"));
+        return;
+      }
+
+      // Implement the logic to check if the directory is empty and delete it
+
+      resolve();
+    } catch (error) {
+      reject(error);
+    }
+  });
+};
+
+// Function for moving a quiz between directories
+module.exports.moveQuiz = function (quizId, newDirectoryId) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const quiz = await Quiz.findById(quizId);
+
+      if (!quiz) {
+        reject(new Error("Quiz not found"));
+        return;
+      }
+
+      const newDirectory = await Directory.findById(newDirectoryId);
+
+      if (!newDirectory) {
+        reject(new Error("Target directory not found"));
+        return;
+      }
+
+      const originalDirectory = await Directory.findById(quiz.directory);
+
+      if (!originalDirectory) {
+        reject(new Error("Original directory not found"));
+        return;
+      }
+
+      // Implement the logic to move the quiz between directories
+
+      await Promise.all([
+        originalDirectory.save(),
+        newDirectory.save(),
+        quiz.save(),
+      ]);
+      resolve();
+    } catch (error) {
+      reject(error);
     }
   });
 };

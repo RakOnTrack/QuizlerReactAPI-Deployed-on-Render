@@ -186,16 +186,86 @@ app.post("/api/directory", (req, res) => {
       res.status(422).json({ message: msg });
     });
 });
+
 app.get("/api/directory", (req, res) => {
+  // Assuming you want to redirect to a default directory
+  const defaultDirID = process.env.DEFAULT_ROOT_DIRECTORY;
+
+  // Redirect to the route with the default directory ID
+  res.redirect(`/api/directory/${defaultDirID}`);
+});
+
+app.get("/api/directory/:id", (req, res) => {
   quizService
-    .readDirectory("6508bbf7a027061a12c9c8e4")
-    .then((dir) => {
-      res.json({ message: "read dir successful" });
+    .readDirectory(req.params.id)
+    .then((data) => {
+      res.json(data);
     })
     .catch((msg) => {
-      res.status(422).json({ message: msg });
+      res.status(422).json({ message: msg + " fail!" });
     });
 });
+
+
+
+
+// Route for moving a directory
+app.put("/api/directory/move/:directoryId/:newParentId", async (req, res) => {
+  try {
+    await quizService.moveDirectory(req.params.directoryId, req.params.newParentId);
+    res.json({ message: "Directory moved successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error moving directory", error: error.message });
+  }
+});
+
+// Route for renaming a directory
+app.put("/api/directory/rename/:directoryId", async (req, res) => {
+  try {
+    await quizService.renameDirectory(req.params.directoryId, req.body.newName);
+    res.json({ message: "Directory renamed successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error renaming directory", error: error.message });
+  }
+});
+
+// Route for switching the order of quizzes and subdirectories
+app.put("/api/directory/switch-order/:directoryId", async (req, res) => {
+  try {
+    await quizService.switchOrder(req.params.directoryId, req.body.orderArray);
+    res.json({ message: "Order switched successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error switching order", error: error.message });
+  }
+});
+
+// Route for deleting a directory if it's empty
+app.delete("/api/directory/:directoryId", async (req, res) => {
+  try {
+    await quizService.deleteDirectory(req.params.directoryId);
+    res.json({ message: "Directory deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error deleting directory", error: error.message });
+  }
+});
+
+// Route for moving a quiz between directories
+app.put("/api/quiz/move/:quizId/:newDirectoryId", async (req, res) => {
+  try {
+    await quizService.moveQuiz(req.params.quizId, req.params.newDirectoryId);
+    res.json({ message: "Quiz moved successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error moving quiz", error: error.message });
+  }
+});
+
+
+
+
+
+
+
+
 
 // app.get("/api/user/favourites", (req, res) => {
 //   userService
