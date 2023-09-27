@@ -297,6 +297,12 @@ module.exports.addQuestion = function (quizID, questionBody) {
         incorrect_answers,
       });
 
+      // checks if question title exists and returns if found
+      if (Quiz.find({"questionsData.questionTitle":questionTitle}).limit(1).length == 1) {
+        reject("Quiz Title already exists");
+        return;
+      }
+
       newQuestion
         .save() // Save the new question
         .then((savedQuestion) => {
