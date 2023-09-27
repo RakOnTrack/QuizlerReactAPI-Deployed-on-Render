@@ -108,6 +108,10 @@ module.exports.addQuiz = function (quizData) {
             questions: questionIds,
             directory: directoryId,
           });
+          // TODO: check for duplicate quizTitle in collection - NEED: collection name
+          /* if (db.<COLLECTION_NAME>.find({"quizTitle":quizTitle}).limit(1).length == 1) {
+            reject("Quiz title already exists")
+          } */
           return newestQuiz.save();
         })
         .then((savedQuiz) => {
@@ -299,7 +303,7 @@ module.exports.addQuestion = function (quizID, questionBody) {
 
       // checks if question title exists and returns if found
       if (Quiz.find({"questionsData.questionTitle":questionTitle}).limit(1).length == 1) {
-        reject("Quiz Title already exists");
+        reject("Question already exists");
         return;
       }
 
