@@ -30,6 +30,7 @@ const newQuizSchema = new mongoose.Schema({
   directory: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Directory", // Reference to the Directory model
+    // never gets used :( the addQuiz function just sets it to null if theres no directory provided.
     default: process.env.DEFAULT_ROOT_DIRECTORY, // Set the default value to homeroute for no parent directory
   },
   started: {
@@ -43,7 +44,7 @@ const directorySchema = new mongoose.Schema({
   quizzes: [
     {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "newQuizzes", // Reference to the Quiz model
+      ref: "Quiz", // Reference to the Quiz model
       default: [],
     },
   ],
@@ -74,8 +75,8 @@ module.exports.connect = function () {
     });
 
     db.once("open", () => {
-      Question = db.model("Questions", questionSchema);
-      Quiz = db.model("newQuizzes", newQuizSchema);
+      Question = db.model("testQuestions", questionSchema);
+      Quiz = db.model("testQuizzes", newQuizSchema);
       Directory = db.model("directories", directorySchema);
       resolve();
     });
@@ -93,29 +94,30 @@ module.exports.addQuiz = function (quizData) {
     const { quizTitle, questions, directoryId } = quizData;
 
     if (!quizTitle || !questions) {
-      reject("quizTitle, questions, not valid.");
+      reject("quizTitle, questions, or directoryId not valid.");
     } else {
-      // // sept 18th i think i forgot to get rid of this!
-      // const questionsWithoutId = questions.map((question) => {
-      //   const { _id, ...questionWithoutId } = question;
-      //   return questionWithoutId;
-      // });
-
       Question.insertMany(questions)
         .then((insertedQuestions) => {
           const questionIds = insertedQuestions.map((question) => question._id);
           let newestQuiz = new Quiz({
             quizTitle,
             questions: questionIds,
-            
-            directory: directoryId || process.env.DEFAULT_ROOT_DIRECTORY,
           });
-          // newestQuiz.
+          // we need to do it this way because if directoryID isnt defined, then it needs to become the default value, set by the schema
+
+          newestQuiz.directory =
+            directoryId || process.env.DEFAULT_ROOT_DIRECTORY;
+
+          // if (directoryId) {
+          //   newestQuiz.directory = directoryId;
+          // } else {
+          //   newestQuiz.directory = process.env.DEFAULT_ROOT_DIRECTORY;
+          // }
+
           return newestQuiz.save();
         })
         .then((savedQuiz) => {
           // Store the _id of the newly created quiz
-          // const savedQuizId = ;
 
           // Add the new quiz's _id to the directory's quizzes array
           return Directory.findByIdAndUpdate(savedQuiz.directory, {
@@ -525,23 +527,27 @@ module.exports.createDirectory = function (directoryData) {
     const { name, parentDirectoryId } = directoryData;
 
     try {
+      if (!name) {
+        reject("please enter a name for the directory");
+      }
       // Create a new directory with the provided name and parent directory ID
       const newDirectory = new Directory({
-        name,
-        parentDirectory: parentDirectoryId, // Set the parent directory if applicable
+        name
       });
 
+      newDirectory.parentDirectory =
+        parentDirectoryId || process.env.DEFAULT_ROOT_DIRECTORY; // Set the parent directory if applicable
       // Save the new directory
       const savedDirectory = await newDirectory.save();
 
       // Update the parent directory's subdirectories array
-      if (parentDirectoryId) {
-        const parentDirectory = await Directory.findById(parentDirectoryId);
-        if (parentDirectory) {
-          parentDirectory.subdirectories.push(savedDirectory._id);
-          await parentDirectory.save();
-        }
+      // if (parentDirectoryId) {
+      const parentDirectory = await Directory.findById(newDirectory.parentDirectory);
+      if (parentDirectory) {
+        parentDirectory.subdirectories.push(savedDirectory._id);
+        await parentDirectory.save();
       }
+      // }
 
       resolve(savedDirectory);
     } catch (error) {
@@ -560,18 +566,44 @@ module.exports.readDirectory = function (directoryId) {
         throw new Error("Directory not found");
       }
 
+      // Find all the subdirectories in the directory
+      const subdirectories = await Directory.find({ parentDirectory: directoryId });
+      const subdirectoryData = subdirectories.map((subdirectory) => ({
+        _id: subdirectory._id,
+        name: subdirectory.name,
+        numberOfSubdirectories: 0, // Placeholder value to be updated below
+        numberOfQuizzes: subdirectory.quizzes.length,
+      }));
+
       // Find all the quizzes in the directory
       const quizzes = await Quiz.find({ directory: directoryId });
+      const quizData = quizzes.map((quiz) => ({
+        _id: quiz._id,
+        quizTitle: quiz.quizTitle,
+        numberOfQuestions: quiz.questions.length,
+        numberOfCorrectQuestions: 0, // Placeholder value to be updated below
+      }));
 
-      // Find all the routes in the directory
-      const routes = await Directory.find({ parentDirectory: directoryId });
+      // Calculate the actual number of subdirectories and correct questions
+      for (const subdirectory of subdirectoryData) {
+        subdirectory.numberOfSubdirectories = subdirectories.filter((sub) => sub.parentDirectory.toString() === subdirectory._id.toString()).length;
+      }
 
-      resolve({ directory, quizzes, routes });
+      // Return the structured data
+      resolve({
+        directory: {
+          _id: directory._id,
+          name: directory.name,
+        },
+        subdirectories: subdirectoryData,
+        quizzes: quizData,
+      });
     } catch (error) {
       reject(error); // Reject the promise with the error
     }
   });
 };
+
 
 // Function for moving a directory
 module.exports.moveDirectory = function (directoryId, newParentId) {

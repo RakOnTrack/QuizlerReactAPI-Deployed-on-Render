@@ -154,28 +154,29 @@ app.delete("/api/quizzes/questions/:questionId", (req, res) => {
     });
 });
 
-app.post("/api/user/register", (req, res) => {
-  userService
-    .registerUser(req.body)
-    .then((msg) => {
-      res.json({ message: msg });
-    })
-    .catch((msg) => {
-      res.status(422).json({ message: msg });
-    });
-});
+// app.post("/api/user/register", (req, res) => {
+//   userService
+//     .registerUser(req.body)
+//     .then((msg) => {
+//       res.json({ message: msg });
+//     })
+//     .catch((msg) => {
+//       res.status(422).json({ message: msg });
+//     });
+// });
 
-app.post("/api/user/login", (req, res) => {
-  userService
-    .checkUser(req.body)
-    .then((user) => {
-      res.json({ message: "login successful" });
-    })
-    .catch((msg) => {
-      res.status(422).json({ message: msg });
-    });
-});
+// app.post("/api/user/login", (req, res) => {
+//   userService
+//     .checkUser(req.body)
+//     .then((user) => {
+//       res.json({ message: "login successful" });
+//     })
+//     .catch((msg) => {
+//       res.status(422).json({ message: msg });
+//     });
+// });
 
+//create a new directory
 app.post("/api/directory", (req, res) => {
   quizService
     .createDirectory(req.body)
