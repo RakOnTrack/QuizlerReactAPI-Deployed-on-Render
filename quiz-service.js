@@ -19,15 +19,15 @@ const questionSchema = new mongoose.Schema({
   },
 });
 
-const newQuizSchema = new mongoose.Schema({
+const quizSchema = new mongoose.Schema({
   quizTitle: String,
   questions: [
     {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Questions", // Assuming 'Question' is the model name for questions
+      ref: "Question", // Assuming 'Question' is the model name for questions
     },
   ],
-  directory: {
+  parentDirectory: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Directory", // Reference to the Directory model
     // never gets used :( the addQuiz function just sets it to null if theres no directory provided.
@@ -75,9 +75,9 @@ module.exports.connect = function () {
     });
 
     db.once("open", () => {
-      Question = db.model("testQuestions", questionSchema);
-      Quiz = db.model("testQuizzes", newQuizSchema);
-      Directory = db.model("directories", directorySchema);
+      Question = db.model("Questions", questionSchema);
+      Quiz = db.model("Quizzes", quizSchema);
+      Directory = db.model("Directories", directorySchema);
       resolve();
     });
   });
@@ -272,7 +272,7 @@ module.exports.getQuiz = function (quizID) {
 
 // Update
 // rename quiz
-module.exports.renameQuiz = function (quizID, newTitle) {
+module.exports.renameItem = function (quizID, newTitle) {
   return new Promise(function (resolve, reject) {
     if (!newTitle) {
       reject("New quiz title is required.");
@@ -532,7 +532,7 @@ module.exports.createDirectory = function (directoryData) {
       }
       // Create a new directory with the provided name and parent directory ID
       const newDirectory = new Directory({
-        name
+        name,
       });
 
       newDirectory.parentDirectory =
@@ -542,7 +542,9 @@ module.exports.createDirectory = function (directoryData) {
 
       // Update the parent directory's subdirectories array
       // if (parentDirectoryId) {
-      const parentDirectory = await Directory.findById(newDirectory.parentDirectory);
+      const parentDirectory = await Directory.findById(
+        newDirectory.parentDirectory
+      );
       if (parentDirectory) {
         parentDirectory.subdirectories.push(savedDirectory._id);
         await parentDirectory.save();
@@ -567,7 +569,9 @@ module.exports.readDirectory = function (directoryId) {
       }
 
       // Find all the subdirectories in the directory
-      const subdirectories = await Directory.find({ parentDirectory: directoryId });
+      const subdirectories = await Directory.find({
+        parentDirectory: directoryId,
+      });
       const subdirectoryData = subdirectories.map((subdirectory) => ({
         _id: subdirectory._id,
         name: subdirectory.name,
@@ -576,7 +580,7 @@ module.exports.readDirectory = function (directoryId) {
       }));
 
       // Find all the quizzes in the directory
-      const quizzes = await Quiz.find({ directory: directoryId });
+      const quizzes = await Quiz.find({ parentDirectory: directoryId });
       const quizData = quizzes.map((quiz) => ({
         _id: quiz._id,
         quizTitle: quiz.quizTitle,
@@ -586,7 +590,10 @@ module.exports.readDirectory = function (directoryId) {
 
       // Calculate the actual number of subdirectories and correct questions
       for (const subdirectory of subdirectoryData) {
-        subdirectory.numberOfSubdirectories = subdirectories.filter((sub) => sub.parentDirectory.toString() === subdirectory._id.toString()).length;
+        subdirectory.numberOfSubdirectories = subdirectories.filter(
+          (sub) =>
+            sub.parentDirectory.toString() === subdirectory._id.toString()
+        ).length;
       }
 
       // Return the structured data
@@ -604,23 +611,55 @@ module.exports.readDirectory = function (directoryId) {
   });
 };
 
-
+//maybe in the future i can combine the moveDir and moveQuiz into 1 function.
 // Function for moving a directory
 module.exports.moveDirectory = function (directoryId, newParentId) {
   return new Promise(async (resolve, reject) => {
     try {
+      if (!directoryId || !newParentId) {
+        reject("missing directoryID or newParentID");
+      }
       const directory = await Directory.findById(directoryId);
-
+      //client is trying to move root directory.
       if (directoryId == process.env.DEFAULT_ROOT_DIRECTORY) {
         throw new Error("Cannot move route directory.");
       }
-
-      if (!directory) {
+      // invalid directory
+      else if (!directory) {
         throw new Error("Directory not found");
       }
+      // Get the original parent directory ID before moving.
+      const originalParentId = directory.parentDirectory;
 
+      // Update the directory's parentDirectory to the newParentId.
       directory.parentDirectory = newParentId;
+
+      // Save the updated directory.
       await directory.save();
+
+      // Remove the directoryId from the original parent directory's subdirectories.
+      if (originalParentId) {
+        const originalParentDirectory = await Directory.findById(
+          originalParentId
+        );
+        if (originalParentDirectory) {
+          originalParentDirectory.subdirectories =
+            //removing the directory by only keeping subdirectories that dont match the directoryID.
+            originalParentDirectory.subdirectories.filter(
+              (sub) => sub.toString() !== directoryId
+            );
+          await originalParentDirectory.save();
+        }
+      }
+
+      // Add the directoryId to the new parent directory's subdirectories.
+      if (newParentId) {
+        const newParentDirectory = await Directory.findById(newParentId);
+        if (newParentDirectory) {
+          newParentDirectory.subdirectories.push(directoryId);
+          await newParentDirectory.save();
+        }
+      }
       resolve();
     } catch (error) {
       reject(error);
@@ -629,25 +668,32 @@ module.exports.moveDirectory = function (directoryId, newParentId) {
 };
 
 // Function for renaming a directory
-module.exports.renameDirectory = function (directoryId, newName) {
+module.exports.renameDirectory = function (directoryId, newTitle) {
   return new Promise(async (resolve, reject) => {
     try {
-      const directory = await Directory.findById(directoryId);
-
-      if (!directory) {
-        reject(new Error("Directory not found"));
+      if (!directoryId || !newTitle) {
+        reject("New directory ID and new title are required.");
         return;
       }
 
-      // Implement the validation and logic here
+      // Update the original directory title
+      const updatedDir = await Directory.findByIdAndUpdate(
+        directoryId,
+        { name: newTitle },
+        { new: true }
+      ).exec();
 
-      await directory.save();
-      resolve();
+      if (updatedDir) {
+        resolve(updatedDir);
+      } else {
+        reject(`Directory with ID ${directoryId} not found.`);
+      }
     } catch (error) {
-      reject(error);
+      reject(error); // Propagate the error for handling in the route
     }
   });
 };
+
 
 // Function for switching the order of quizzes and subdirectories in a directory
 module.exports.switchOrder = function (directoryId, quizIds, subdirectoryIds) {

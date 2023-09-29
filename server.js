@@ -67,7 +67,7 @@ app.get("/api/quizzes/:id", (req, res) => {
 //rename quiz
 app.put("/api/quizzes/:id", (req, res) => {
   quizService
-    .renameQuiz(req.params.id, req.body.quizTitle)
+    .renameItem(req.params.id, req.body.quizTitle)
     .then((data) => {
       res.json(data);
     })
@@ -207,26 +207,27 @@ app.get("/api/directory/:id", (req, res) => {
     });
 });
 
-
-
-
 // Route for moving a directory
-app.put("/api/directory/move/:directoryId/:newParentId", async (req, res) => {
+app.put("/api/directory/move/", async (req, res) => {
   try {
-    await quizService.moveDirectory(req.params.directoryId, req.params.newParentId);
+    await quizService.moveDirectory(req.body.directoryId, req.body.newParentId);
     res.json({ message: "Directory moved successfully" });
   } catch (error) {
-    res.status(500).json({ message: "Error moving directory", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Error moving directory", error: error.message });
   }
 });
 
 // Route for renaming a directory
-app.put("/api/directory/rename/:directoryId", async (req, res) => {
+app.put("/api/directory/rename/", (req, res) => {
   try {
-    await quizService.renameDirectory(req.params.directoryId, req.body.newName);
+    quizService.renameDirectory(req.body.directoryId, req.body.newTitle);
     res.json({ message: "Directory renamed successfully" });
   } catch (error) {
-    res.status(500).json({ message: "Error renaming directory", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Error renaming directory", error: error.message });
   }
 });
 
@@ -236,7 +237,9 @@ app.put("/api/directory/switch-order/:directoryId", async (req, res) => {
     await quizService.switchOrder(req.params.directoryId, req.body.orderArray);
     res.json({ message: "Order switched successfully" });
   } catch (error) {
-    res.status(500).json({ message: "Error switching order", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Error switching order", error: error.message });
   }
 });
 
@@ -246,7 +249,9 @@ app.delete("/api/directory/:directoryId", async (req, res) => {
     await quizService.deleteDirectory(req.params.directoryId);
     res.json({ message: "Directory deleted successfully" });
   } catch (error) {
-    res.status(500).json({ message: "Error deleting directory", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Error deleting directory", error: error.message });
   }
 });
 
@@ -256,17 +261,11 @@ app.put("/api/quiz/move/:quizId/:newDirectoryId", async (req, res) => {
     await quizService.moveQuiz(req.params.quizId, req.params.newDirectoryId);
     res.json({ message: "Quiz moved successfully" });
   } catch (error) {
-    res.status(500).json({ message: "Error moving quiz", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Error moving quiz", error: error.message });
   }
 });
-
-
-
-
-
-
-
-
 
 // app.get("/api/user/favourites", (req, res) => {
 //   userService
