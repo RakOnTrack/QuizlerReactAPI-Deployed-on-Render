@@ -24,7 +24,7 @@ const quizSchema = new mongoose.Schema({
   questions: [
     {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Question", // Assuming 'Question' is the model name for questions
+      ref: "Questions", // Assuming 'Question' is the model name for questions
     },
   ],
   parentDirectory: {
