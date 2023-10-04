@@ -126,11 +126,8 @@ app.delete("/api/quizzes/:id", (req, res) => {
 
 //update question
 app.put("/api/quizzes/questions/:questionId", (req, res) => {
-  const quizId = req.params.quizId;
-  const questionId = req.params.questionId;
-
   quizService
-    .updateQuestion(questionId, req.body)
+    .updateQuestion(req.params.questionId, req.body)
     .then((data) => {
       res.json(data);
     })
@@ -141,11 +138,8 @@ app.put("/api/quizzes/questions/:questionId", (req, res) => {
 
 // remove question.
 app.delete("/api/quizzes/questions/:questionId", (req, res) => {
-  const quizId = req.params.quizId;
-  const questionId = req.params.questionId;
-
   quizService
-    .deleteQuestion(questionId)
+    .deleteQuestion(req.params.questionId)
     .then((updatedQuestions) => {
       res.json(updatedQuestions);
     })
@@ -179,23 +173,25 @@ app.delete("/api/quizzes/questions/:questionId", (req, res) => {
 //create a new directory
 app.post("/api/directory", (req, res) => {
   quizService
-    .createDirectory(req.body)
+    .createDirectory(req.body.name, req.body.parentDirectoryId)
     .then((dir) => {
-      res.json({ message: "created dir successful" });
+      res.json({ dir });
     })
     .catch((msg) => {
       res.status(422).json({ message: msg });
     });
 });
 
+//read directory, base
 app.get("/api/directory", (req, res) => {
   // Assuming you want to redirect to a default directory
   const defaultDirID = process.env.DEFAULT_ROOT_DIRECTORY;
-
+  
   // Redirect to the route with the default directory ID
   res.redirect(`/api/directory/${defaultDirID}`);
 });
 
+//read directory
 app.get("/api/directory/:id", (req, res) => {
   quizService
     .readDirectory(req.params.id)
@@ -207,7 +203,7 @@ app.get("/api/directory/:id", (req, res) => {
     });
 });
 
-// Route for moving a directory
+// moving a directory
 app.put("/api/directory/move/", async (req, res) => {
   try {
     await quizService.moveDirectory(req.body.directoryId, req.body.newParentId);
@@ -232,9 +228,13 @@ app.put("/api/directory/rename/", (req, res) => {
 });
 
 // Route for switching the order of quizzes and subdirectories
-app.put("/api/directory/switch-order/:directoryId", async (req, res) => {
+app.put("/api/directory/switch-order/", async (req, res) => {
   try {
-    await quizService.switchOrder(req.params.directoryId, req.body.orderArray);
+    await quizService.switchOrder(
+      req.body.directoryId,
+      req.body.newQuizIdOrder,
+      req.body.newSubDirIdOrder
+    );
     res.json({ message: "Order switched successfully" });
   } catch (error) {
     res
@@ -244,7 +244,7 @@ app.put("/api/directory/switch-order/:directoryId", async (req, res) => {
 });
 
 // Route for deleting a directory if it's empty
-app.delete("/api/directory/:directoryId", async (req, res) => {
+app.delete("/api/directory/", async (req, res) => {
   try {
     await quizService.deleteDirectory(req.params.directoryId);
     res.json({ message: "Directory deleted successfully" });
@@ -256,14 +256,12 @@ app.delete("/api/directory/:directoryId", async (req, res) => {
 });
 
 // Route for moving a quiz between directories
-app.put("/api/quiz/move/:quizId/:newDirectoryId", async (req, res) => {
+app.put("/api/quiz/move/", async (req, res) => {
   try {
-    await quizService.moveQuiz(req.params.quizId, req.params.newDirectoryId);
+    await quizService.moveQuiz(req.body.quizId, req.body.newDirectoryId);
     res.json({ message: "Quiz moved successfully" });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error moving quiz", error: error.message });
+    res.status(500).json({ message: "Error moving quiz: ", error });
   }
 });
 
