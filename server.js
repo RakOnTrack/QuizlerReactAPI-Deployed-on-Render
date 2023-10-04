@@ -46,6 +46,7 @@ app.get("/api/quizzes", (req, res) => {
     .getQuizzes()
     .then((data) => {
       res.json(data);
+      res.statusCode(200).json({ data: msg, error: null, });
     })
     .catch((msg) => {
       res.status(422).json({ error: msg });
@@ -53,9 +54,9 @@ app.get("/api/quizzes", (req, res) => {
 });
 
 //get quizzes based on search by quizTitle
-app.get("/api/quizzes?quizTitle=:quizTitle", (req, res) => {
+app.get("/api/quizzes", (req, res) => {
   quizService
-    .getQuizByTitle(req.params.quizTitle)
+    .getQuizByTitle(req.query.quizTitle)
     .then((data) => {
       res.json(data);
     })
@@ -267,9 +268,11 @@ app.post("/api/directory", (req, res) => {
 
 Promise.all([quizService.connect(), userService.connect()])
   .then(() => {
-    app.listen(HTTP_PORT, () => {
-      console.log("API listening on: " + HTTP_PORT);
-    });
+    if (process.env.NODE_ENV !== "test") { // condition for running tests port
+      app.listen(HTTP_PORT, () => {
+        console.log("API listening on: " + HTTP_PORT);
+      });
+    }
   })
   .catch((err) => {
     console.log("Unable to start the server: " + err);
