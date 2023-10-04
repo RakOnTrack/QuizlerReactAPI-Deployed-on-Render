@@ -108,11 +108,14 @@ module.exports.addQuiz = function (quizData) {
             questions: questionIds,
             directory: directoryId,
           });
-          // TODO: check for duplicate quizTitle in collection - NEED: collection name
-          /* if (db.<COLLECTION_NAME>.find({"quizTitle":quizTitle}).limit(1).length == 1) {
-            reject("Quiz title already exists")
-          } */
-          return newestQuiz.save();
+          // Check for duplicate quizTitle in collection
+          try {
+            if (db.newquizzes.find({"quizTitle":quizTitle}).limit(1).length == 1) {
+              reject("Quiz title already exists")
+            }
+          } finally {
+            return newestQuiz.save();
+          }
         })
         .then((savedQuiz) => {
           return module.exports.getQuiz(savedQuiz._id); // Call getQuiz with the newly saved quiz ID
@@ -301,13 +304,14 @@ module.exports.addQuestion = function (quizID, questionBody) {
         incorrect_answers,
       });
 
-      // checks if question title exists and returns if found
-      if (Quiz.find({"questionsData.questionTitle":questionTitle}).limit(1).length == 1) {
-        reject("Question already exists");
-        return;
-      }
-
-      newQuestion
+      // Checks if question title exists and returns if found
+      try {
+        if (Quiz.find({"questionsData.questionTitle":questionTitle}).limit(1).length == 1) {
+          reject("Question already exists");
+          return;
+        }
+      } finally {
+        newQuestion
         .save() // Save the new question
         .then((savedQuestion) => {
           // Find the quiz by ID and update the questions array
@@ -331,6 +335,7 @@ module.exports.addQuestion = function (quizID, questionBody) {
         .catch((err) => {
           reject(`Error saving new question: ${err}`);
         });
+      }
     }
   });
 };
