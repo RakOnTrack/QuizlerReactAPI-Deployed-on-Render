@@ -89,55 +89,40 @@ module.exports.connect = function () {
 
 // Create
 // add quiz
-module.exports.addQuiz = function (quizData) {
-  return new Promise(function (resolve, reject) {
+module.exports.addQuiz = async function (quizData) {
+  try {
     const { quizTitle, questions, directoryId } = quizData;
 
     if (!quizTitle || !questions) {
-      reject("quizTitle, questions, or directoryId not valid.");
-    } else {
-      Question.insertMany(questions)
-        .then((insertedQuestions) => {
-          const questionIds = insertedQuestions.map((question) => question._id);
-          let newestQuiz = new Quiz({
-            quizTitle,
-            questions: questionIds,
-          });
-          // we need to do it this way because if directoryID isnt defined, then it needs to become the default value, set by the schema
-
-          newestQuiz.directory =
-            directoryId || process.env.DEFAULT_ROOT_DIRECTORY;
-
-          // if (directoryId) {
-          //   newestQuiz.directory = directoryId;
-          // } else {
-          //   newestQuiz.directory = process.env.DEFAULT_ROOT_DIRECTORY;
-          // }
-
-          return newestQuiz.save();
-        })
-        .then((savedQuiz) => {
-          // Store the _id of the newly created quiz
-
-          // Add the new quiz's _id to the directory's quizzes array
-          return Directory.findByIdAndUpdate(savedQuiz.directory, {
-            $push: { quizzes: savedQuiz._id },
-          }).then(() => {
-            return module.exports.getQuiz(savedQuiz._id); // Call getQuiz with the newly saved quiz ID
-          });
-        })
-        .then((retrievedQuiz) => {
-          resolve(retrievedQuiz); // Resolve with the retrieved quiz data
-        })
-        .catch((err) => {
-          if (err.code === 11000) {
-            reject("Quiz Title already taken");
-          } else {
-            reject("There was an error creating the quiz: " + err);
-          }
-        });
+      throw new Error("quizTitle or questions are not valid.");
     }
-  });
+
+    const insertedQuestions = await Question.insertMany(questions);
+
+    const questionIds = insertedQuestions.map((question) => question._id);
+
+    const newestQuiz = new Quiz({
+      quizTitle,
+      questions: questionIds,
+      directory: directoryId || process.env.DEFAULT_ROOT_DIRECTORY,
+    });
+
+    const savedQuiz = await newestQuiz.save();
+
+    await Directory.findByIdAndUpdate(savedQuiz.directory, {
+      $push: { quizzes: savedQuiz._id },
+    });
+
+    const retrievedQuiz = await module.exports.getQuiz(savedQuiz._id);
+
+    return retrievedQuiz;
+  } catch (err) {
+    if (err.code === 11000) {
+      throw new Error("Quiz Title already taken");
+    } else {
+      throw new Error("There was an error creating the quiz: " + err.message);
+    }
+  }
 };
 
 module.exports.addQuizWithAI = async function (req) {
@@ -551,7 +536,9 @@ module.exports.createDirectory = function (name, parentDirectoryId) {
       }
 
       // After creating the directory, call the readDirectory function to retrieve its details
-      const directoryDetails = await module.exports.readDirectory(parentDirectoryId);
+      const directoryDetails = await module.exports.readDirectory(
+        parentDirectoryId
+      );
 
       resolve(directoryDetails);
     } catch (error) {
@@ -778,6 +765,8 @@ module.exports.deleteDirectory = async function (directoryId) {
 
     if (!directory) {
       throw new Error("Directory not found");
+    } else if (directoryId == process.env.DEFAULT_ROOT_DIRECTORY) {
+      throw new Error("Cannot delete route directory.");
     }
 
     // Delete all quizzes within the directory
