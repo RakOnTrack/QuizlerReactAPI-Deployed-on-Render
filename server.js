@@ -67,7 +67,7 @@ app.get("/api/quizzes/:id", (req, res) => {
 //rename quiz
 app.put("/api/quizzes/:id", (req, res) => {
   quizService
-    .renameQuiz(req.params.id, req.body.quizTitle)
+    .renameItem(req.params.id, req.body.quizTitle)
     .then((data) => {
       res.json(data);
     })
@@ -126,11 +126,8 @@ app.delete("/api/quizzes/:id", (req, res) => {
 
 //update question
 app.put("/api/quizzes/questions/:questionId", (req, res) => {
-  const quizId = req.params.quizId;
-  const questionId = req.params.questionId;
-
   quizService
-    .updateQuestion(questionId, req.body)
+    .updateQuestion(req.params.questionId, req.body)
     .then((data) => {
       res.json(data);
     })
@@ -141,11 +138,8 @@ app.put("/api/quizzes/questions/:questionId", (req, res) => {
 
 // remove question.
 app.delete("/api/quizzes/questions/:questionId", (req, res) => {
-  const quizId = req.params.quizId;
-  const questionId = req.params.questionId;
-
   quizService
-    .deleteQuestion(questionId)
+    .deleteQuestion(req.params.questionId)
     .then((updatedQuestions) => {
       res.json(updatedQuestions);
     })
@@ -154,37 +148,121 @@ app.delete("/api/quizzes/questions/:questionId", (req, res) => {
     });
 });
 
-app.post("/api/user/register", (req, res) => {
-  userService
-    .registerUser(req.body)
-    .then((msg) => {
-      res.json({ message: msg });
-    })
-    .catch((msg) => {
-      res.status(422).json({ message: msg });
-    });
-});
+// app.post("/api/user/register", (req, res) => {
+//   userService
+//     .registerUser(req.body)
+//     .then((msg) => {
+//       res.json({ message: msg });
+//     })
+//     .catch((msg) => {
+//       res.status(422).json({ message: msg });
+//     });
+// });
 
-app.post("/api/user/login", (req, res) => {
-  userService
-    .checkUser(req.body)
-    .then((user) => {
-      res.json({ message: "login successful" });
-    })
-    .catch((msg) => {
-      res.status(422).json({ message: msg });
-    });
-});
+// app.post("/api/user/login", (req, res) => {
+//   userService
+//     .checkUser(req.body)
+//     .then((user) => {
+//       res.json({ message: "login successful" });
+//     })
+//     .catch((msg) => {
+//       res.status(422).json({ message: msg });
+//     });
+// });
 
+//create a new directory
 app.post("/api/directory", (req, res) => {
   quizService
-    .createDirectory(req.body)
+    .createDirectory(req.body.name, req.body.parentDirectoryId)
     .then((dir) => {
-      res.json({ message: "created dir successful" });
+      res.json({ dir });
     })
     .catch((msg) => {
       res.status(422).json({ message: msg });
     });
+});
+
+//read directory, base
+app.get("/api/directory", (req, res) => {
+  // Assuming you want to redirect to a default directory
+  const defaultDirID = process.env.DEFAULT_ROOT_DIRECTORY;
+  
+  // Redirect to the route with the default directory ID
+  res.redirect(`/api/directory/${defaultDirID}`);
+});
+
+//read directory
+app.get("/api/directory/:id", (req, res) => {
+  quizService
+    .readDirectory(req.params.id)
+    .then((data) => {
+      res.json(data);
+    })
+    .catch((msg) => {
+      res.status(422).json({ message: msg + " fail!" });
+    });
+});
+
+// moving a directory
+app.put("/api/directory/move/", async (req, res) => {
+  try {
+    await quizService.moveDirectory(req.body.directoryId, req.body.newParentId);
+    res.json({ message: "Directory moved successfully" });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error moving directory", error: error.message });
+  }
+});
+
+// Route for renaming a directory
+app.put("/api/directory/rename/", (req, res) => {
+  try {
+    quizService.renameDirectory(req.body.directoryId, req.body.newTitle);
+    res.json({ message: "Directory renamed successfully" });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error renaming directory", error: error.message });
+  }
+});
+
+// Route for switching the order of quizzes and subdirectories
+app.put("/api/directory/switch-order/", async (req, res) => {
+  try {
+    await quizService.switchOrder(
+      req.body.directoryId,
+      req.body.newQuizIdOrder,
+      req.body.newSubDirIdOrder
+    );
+    res.json({ message: "Order switched successfully" });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error switching order", error: error.message });
+  }
+});
+
+// Route for deleting a directory if it's empty
+app.delete("/api/directory/", async (req, res) => {
+  try {
+    await quizService.deleteDirectory(req.params.directoryId);
+    res.json({ message: "Directory deleted successfully" });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error deleting directory", error: error.message });
+  }
+});
+
+// Route for moving a quiz between directories
+app.put("/api/quiz/move/", async (req, res) => {
+  try {
+    await quizService.moveQuiz(req.body.quizId, req.body.newDirectoryId);
+    res.json({ message: "Quiz moved successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error moving quiz: ", error });
+  }
 });
 
 // app.get("/api/user/favourites", (req, res) => {
