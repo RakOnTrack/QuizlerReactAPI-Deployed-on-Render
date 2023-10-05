@@ -77,7 +77,7 @@ module.exports.connect = function () {
     db.once("open", () => {
       Question = db.model("Questions", questionSchema);
       Quiz = db.model("Quizzes", quizSchema);
-      Directory = db.model("Directories", directorySchema);
+      Directory = db.model("Directory", directorySchema);
       resolve();
     });
   });
