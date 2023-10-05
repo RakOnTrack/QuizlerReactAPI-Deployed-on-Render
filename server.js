@@ -65,7 +65,7 @@ app.get("/api/quizzes/:id", (req, res) => {
 });
 
 //rename quiz
-app.put("/api/quizzes/:id", (req, res) => {
+app.put("/api/quizzes/rename/:id", (req, res) => {
   quizService
     .renameItem(req.params.id, req.body.quizTitle)
     .then((data) => {
@@ -172,8 +172,15 @@ app.delete("/api/quizzes/questions/:questionId", (req, res) => {
 
 //create a new directory
 app.post("/api/directory", (req, res) => {
+  // If req.body.parentDirectoryId is falsy, and you want to ensure a default value,
+  // you can explicitly set it to the default here
+  // if (!req.body.parentDirectoryId) {
+  //   req.body.parentDirectoryId = process.env.DEFAULT_ROOT_DIRECTORY;
+  // }
+  const dirID =
+    req.body.parentDirectoryId || process.env.DEFAULT_ROOT_DIRECTORY;
   quizService
-    .createDirectory(req.body.name, req.body.parentDirectoryId)
+    .createDirectory(req.body.name, dirID)
     .then((dir) => {
       res.json({ dir });
     })
@@ -186,7 +193,7 @@ app.post("/api/directory", (req, res) => {
 app.get("/api/directory", (req, res) => {
   // Assuming you want to redirect to a default directory
   const defaultDirID = process.env.DEFAULT_ROOT_DIRECTORY;
-  
+
   // Redirect to the route with the default directory ID
   res.redirect(`/api/directory/${defaultDirID}`);
 });
@@ -246,7 +253,7 @@ app.put("/api/directory/switch-order/", async (req, res) => {
 // Route for deleting a directory if it's empty
 app.delete("/api/directory/", async (req, res) => {
   try {
-    await quizService.deleteDirectory(req.params.directoryId);
+    await quizService.deleteDirectory(req.body.directoryId);
     res.json({ message: "Directory deleted successfully" });
   } catch (error) {
     res
@@ -256,7 +263,7 @@ app.delete("/api/directory/", async (req, res) => {
 });
 
 // Route for moving a quiz between directories
-app.put("/api/quiz/move/", async (req, res) => {
+app.put("/api/quizzes/move/", async (req, res) => {
   try {
     await quizService.moveQuiz(req.body.quizId, req.body.newDirectoryId);
     res.json({ message: "Quiz moved successfully" });

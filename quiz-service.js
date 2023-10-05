@@ -101,15 +101,17 @@ module.exports.addQuiz = async function (quizData) {
 
     const questionIds = insertedQuestions.map((question) => question._id);
 
+    let directoryToUse = directoryId || process.env.DEFAULT_ROOT_DIRECTORY;
+
     const newestQuiz = new Quiz({
       quizTitle,
       questions: questionIds,
-      directory: directoryId || process.env.DEFAULT_ROOT_DIRECTORY,
+      parentDirectory: directoryToUse,
     });
 
     const savedQuiz = await newestQuiz.save();
 
-    await Directory.findByIdAndUpdate(savedQuiz.directory, {
+    await Directory.findByIdAndUpdate(savedQuiz.parentDirectory, {
       $push: { quizzes: savedQuiz._id },
     });
 
@@ -770,7 +772,10 @@ module.exports.deleteDirectory = async function (directoryId) {
     }
 
     // Delete all quizzes within the directory
-    await Quiz.deleteMany({ parentDirectory: directoryId });
+    // await Quiz.deleteMany({ parentDirectory: directoryId });
+    directory.quizzes.forEach((quiz) => {
+      module.exports.deleteQuiz(quiz._id);
+    });
 
     // Find all subdirectories within this directory
     const subdirectories = await Directory.find({
