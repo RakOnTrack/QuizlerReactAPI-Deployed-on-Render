@@ -146,13 +146,13 @@ exports.getQuizzes = function () {
         },
       },
     ])
-      .exec()
-      .then((quizzes) => {
-        resolve(quizzes);
-      })
-      .catch((err) => {
-        reject(`Unable to retrieve quizzes: ${err}`);
-      });
+    .exec()
+    .then((quizzes) => {
+      resolve(quizzes);
+    })
+    .catch((err) => {
+      reject(`Unable to retrieve quizzes: ${err}`);
+    });
   });
 };
 

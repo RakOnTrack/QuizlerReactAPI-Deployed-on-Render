@@ -16,7 +16,7 @@ app.get("/", (req, res) => {
   res.json({ message: "Quizler App" });
 });
 
-require("./routes/quiz.routes.js")(app);
+app.use('/api/quizzes', require("./routes/quiz.routes.js"));
 require("./routes/directory.routes.js")(app);
 //require("./routes/user.routes")(app);
 
