@@ -1,9 +1,9 @@
+const mongoose = require("mongoose");
 const express = require("express");
 const app = express();
 const cors = require("cors");
-const dotenv = require("dotenv");
-dotenv.config();
-const mongoService = require("./models/index.js");
+require("dotenv").config();
+const db = require("./models");
 
 app.use(cors()); // go through cors policy for requests
 
@@ -16,13 +16,9 @@ app.get("/", (req, res) => {
   res.json({ message: "Quizler App" });
 });
 
-app.use('/api/quizzes', require("./routes/quiz.routes.js"));
-require("./routes/directory.routes.js")(app);
-//require("./routes/user.routes")(app);
-
 const HTTP_PORT = process.env.PORT || 8080;
 
-mongoService.connect()
+db.mongoose.connect(db.url)
   .then(() => {
     app.listen(HTTP_PORT, () => {
       console.log("API listening on: " + HTTP_PORT);
@@ -32,3 +28,7 @@ mongoService.connect()
     console.log("Unable to start the server: " + err);
     process.exit();
   });
+
+app.use('/api/quizzes', require("./routes/quiz.routes.js"));
+require("./routes/directory.routes.js")(app);
+//require("./routes/user.routes")(app);

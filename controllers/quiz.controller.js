@@ -1,6 +1,8 @@
 const OpenAI = require("openai");
+const db = require("../models/index"); // retrieve mongo connection
 const models = require("../models");
 
+// FIXME: store in a models file
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY, // This is also the default, can be omitted
 });
@@ -11,45 +13,54 @@ let Quiz = models.quizSchema;
 // ==== Create ====
 
 // add a new quiz
-exports.addQuiz = async function (quizData) {
+exports.addQuiz = async (req, res) =>  {
   try {
-    const { quizTitle, questions, directoryId } = quizData;
+    const { quizTitle, questions, directoryId } = req.body;
 
     if (!quizTitle || !questions) {
-      throw new Error("quizTitle or questions are not valid.");
+      res.status(400).json({ error: "Content is empty" });
+      return;
     }
 
-    const insertedQuestions = await Question.insertMany(questions);
+    // Insert all the questions into database
+    const insertedQuestions = await db.Question.insertMany(questions);
 
     const questionIds = insertedQuestions.map((question) => question._id);
 
     let directoryToUse = directoryId || process.env.DEFAULT_ROOT_DIRECTORY;
 
+    // Initiate new quiz object with data input
     const newestQuiz = new Quiz({
       quizTitle,
       questions: questionIds,
       parentDirectory: directoryToUse,
     });
 
+    // Save quiz into database
     const savedQuiz = await newestQuiz.save();
 
-    await Directory.findByIdAndUpdate(savedQuiz.parentDirectory, {
+    // Add Quiz to a Directory
+    await db.Directory.findByIdAndUpdate(savedQuiz.parentDirectory, {
       $push: { quizzes: savedQuiz._id },
     });
 
-    const retrievedQuiz = await module.exports.getQuiz(savedQuiz._id);
-
-    return retrievedQuiz;
+    // gets Quiz Id and returns that
+    await module.exports.getQuiz(savedQuiz._id)
+      .then(data => {
+        res.status(200).json(data)
+      });
   } catch (err) {
     if (err.code === 11000) {
-      throw new Error("Quiz Title already taken");
+      res.status(11000).json({ error: "Quiz Title already taken" });
+      return;
     } else {
-      throw new Error("There was an error creating the quiz: " + err.message);
+      res.status(400).json({ error: "There was an error creating the quiz: " + err.message });
+      return;
     }
   }
 };
 
-// Add a new quiz using AI
+// FIXME: Need to fix - Add a new quiz using AI
 exports.addQuizWithAI = async function (req) {
   return new Promise(async (resolve, reject) => {
     // Return a promise
@@ -90,7 +101,7 @@ exports.addQuizWithAI = async function (req) {
   });
 };
 
-//TODO: add details for function
+//FIXME: Add details for function
 function generatePrompt(studyContent, questionCount) {
   return `
   Make me a multiple-choice quiz with ${questionCount} questions about this content:
@@ -118,319 +129,314 @@ function generatePrompt(studyContent, questionCount) {
 // ==== Read ====
 
 // get all quizzes. this just gets the quizTitle, _id, number of questions, and number of correct questions
-exports.getQuizzes = function () {
-  return new Promise(function (resolve, reject) {
-    Quiz.aggregate([
-      {
-        $lookup: {
-          from: "questions", // The name of the questions collection
-          localField: "questions",
-          foreignField: "_id",
-          as: "questionsData",
-        },
+exports.getQuizzes = (req, res) => {
+  db.Quiz.aggregate([
+    {
+      $lookup: {
+        from: "questions", // The name of the questions collection
+        localField: "questions",
+        foreignField: "_id",
+        as: "questionsData",
       },
-      {
-        $project: {
-          _id: 1,
-          quizTitle: 1,
-          numberOfQuestions: { $size: "$questionsData" }, // Count questions
-          numberOfCorrectQuestions: {
-            $size: {
-              $filter: {
-                input: "$questionsData",
-                as: "question",
-                cond: { $eq: ["$$question.isCorrect", true] }, // Count isCorrect = true
-              },
+    },
+    {
+      $project: {
+        _id: 1,
+        quizTitle: 1,
+        numberOfQuestions: { $size: "$questionsData" }, // Count questions
+        numberOfCorrectQuestions: {
+          $size: {
+            $filter: {
+              input: "$questionsData",
+              as: "question",
+              cond: { $eq: ["$$question.isCorrect", true] }, // Count isCorrect = true
             },
           },
         },
       },
-    ])
-    .exec()
-    .then((quizzes) => {
-      resolve(quizzes);
-    })
-    .catch((err) => {
-      reject(`Unable to retrieve quizzes: ${err}`);
+    },
+  ])
+  .exec()
+  .then((quizzes) => {
+    res.status(200).json(quizzes);
+  })
+  .catch((err) => {
+    res.status(500).send({
+      message: err.message || "Error occured retreiving all quizzes."
     });
   });
 };
 
 // TODO: eventually we'll have to make a condition where if the quiz has more than 50 questions, it first only add the first half, and then a second half using another call
 
-// get a single quiz.
-exports.getQuiz = function (quizID) {
-  return new Promise(function (resolve, reject) {
-    Quiz.findById(quizID)
-      .populate({
-        path: "questions",
-        model: "Questions", // Assuming 'Question' is the model name for questions
-      })
-      .exec()
-      .then((quiz) => {
-        if (quiz) {
-          resolve(quiz);
-        } else {
-          reject(`Quiz with ID ${quizID} not found`);
-        }
-      })
-      .catch((err) => {
-        reject(`Unable to retrieve quiz: ${err}`);
-      });
-  });
+// get a single quiz by ID
+exports.getQuiz = (req, res) => {
+  let quizID = req.params.id;
+  db.Quiz.findById(quizID)
+    .populate({
+      path: "questions",
+      model: "Questions", // Assuming 'Question' is the model name for questions
+    })
+    .exec()
+    .then((quiz) => {
+      if (quiz) {
+        res.status(200).json(quiz);
+      } else {
+        res.status(422).json({ error: `Quiz with ID ${quizID} not found` });
+      }
+    })
+    .catch((err) => {
+      res.status(422).json({ error: err });
+    });
 };
 
 // ==== Update ====
 
-// rename quiz
-exports.renameItem = function (quizID, newTitle) {
-  return new Promise(function (resolve, reject) {
-    if (!newTitle) {
-      reject("New quiz title is required.");
+// Rename quiz using ID
+exports.renameItem = (req, res) => {
+  let quizID = req.params.id;
+  let newTitle = req.body.quizTitle;
+  if (!newTitle) {
+    res.status(400).json({ error: "Content is empty" });
+    return;
+  }
+
+  // Update the original quiz title
+  db.Quiz.findByIdAndUpdate(quizID, { quizTitle: newTitle }, { new: true })
+    .exec()
+    .then((updatedQuiz) => {
+      if (updatedQuiz) {
+        res.status(200).json(updatedQuiz);
+      } else {
+        res.status(400).json({ error: `Quiz with ID ${quizID} not found.` });
+        return;
+      }
+    })
+    .catch((err) => {
+      res.status(400).json({ error: `Error updating quiz title: ${err}` });
       return;
-    }
-
-    // Update the original quiz title
-    Quiz.findByIdAndUpdate(quizID, { quizTitle: newTitle }, { new: true })
-      .exec()
-      .then((updatedQuiz) => {
-        if (updatedQuiz) {
-          resolve(updatedQuiz);
-        } else {
-          reject(`Quiz with ID ${quizID} not found.`);
-        }
-      })
-      .catch((err) => {
-        reject(`Error updating quiz title: ${err}`);
-      });
-  });
+    });
 };
 
-// add question to quiz
-exports.addQuestion = function (quizID, questionBody) {
-  return new Promise(function (resolve, reject) {
-    const { questionTitle, correct_answer, incorrect_answers } = questionBody;
+// Add question to quiz
+exports.addQuestion = (req, res) => {
+  let quizID = req.params.id;
+  let questionBody = req.body;
 
-    if (!questionTitle || !correct_answer || !incorrect_answers) {
-      reject("Invalid question data.");
-    } else {
-      // Create the new question document
-      const newQuestion = new Question({
-        questionTitle,
-        correct_answer,
-        incorrect_answers,
-      });
+  const { questionTitle, correct_answer, incorrect_answers } = questionBody;
 
-      newQuestion
-        .save() // Save the new question
-        .then((savedQuestion) => {
-          // Find the quiz by ID and update the questions array
-          Quiz.findByIdAndUpdate(
-            quizID,
-            { $push: { questions: savedQuestion._id } },
-            { new: true }
-          )
-            .exec()
-            .then(() => {
-              // Get the updated quiz data using getQuiz function
-              return module.exports.getQuiz(quizID);
-            })
-            .then((updatedQuiz) => {
-              resolve(updatedQuiz);
-            })
-            .catch((err) => {
-              reject(`Unable to update questions for quiz with ID: ${quizID}`);
-            });
-        })
-        .catch((err) => {
-          reject(`Error saving new question: ${err}`);
-        });
-    }
-  });
-};
+  if (!questionTitle || !correct_answer || !incorrect_answers) {
+    res.status(422).json({ error: "Invalid question data." });
+    return;
+  } else {
+    // Create the new question document
+    const newQuestion = new Question({
+      questionTitle,
+      correct_answer,
+      incorrect_answers,
+    });
 
-// restart quiz, sets each questions isCorrect to false
-exports.restartQuiz = function (quizID) {
-  return new Promise(function (resolve, reject) {
-    // Retrieve the original quiz by ID
-    Quiz.findById(quizID)
-      .populate({
-        path: "questions",
-        model: "Questions",
-      }) // Populate questions to update them
-      .exec()
-      .then((quiz) => {
-        // Update each question's isCorrect field to false
-        const updatedQuestionsPromises = quiz.questions.map((question) => {
-          question.isCorrect = false;
-          return question.save(); // Save each modified question
-        });
-
-        // Wait for all question saves to complete
-        return Promise.all(updatedQuestionsPromises);
-      })
-      .then(() => {
-        resolve(`Quiz questions successfully restarted`);
+    newQuestion
+      .save() // Save the new question
+      .then((savedQuestion) => {
+        // Find the quiz by ID and update the questions array
+        db.Quiz.findByIdAndUpdate(
+          quizID,
+          { $push: { questions: savedQuestion._id } },
+          { new: true }
+        )
+          .exec()
+          .then(() => {
+            // Get the updated quiz data using getQuiz function
+            module.exports.getQuiz(quizID);
+          })
+          .then((updatedQuiz) => {
+            // Return the updated quiz
+            res.status(200).json(updatedQuiz);
+          })
+          .catch((err) => {
+            res.status(422).json({ error: `Unable to update questions for quiz with ID: ${quizID}: ${err}` });
+          });
       })
       .catch((err) => {
-        reject(`Error restarting quiz questions: ${err}`);
+        res.status(422).json({ error: `Error saving new question: ${err}`});
       });
-  });
+  }
+};
+
+// Restart quiz, sets each questions isCorrect to false
+exports.restartQuiz = (req, res) => {
+  let quizID = req.params.id;
+
+  // Retrieve the original quiz by ID
+  db.Quiz.findById(quizID)
+    .populate({
+      path: "questions",
+      model: "Questions",
+    }) // Populate questions to update them
+    .exec()
+    .then((quiz) => {
+      // Update each question's isCorrect field to false
+      const updatedQuestionsPromises = quiz.questions.map((question) => {
+        question.isCorrect = false;
+        return question.save(); // Save each modified question
+      });
+
+      // Wait for all question saves to complete
+      res.status(200).json(updatedQuestionsPromises)
+    })
+    .catch((err) => {
+      res.status(422).json({ error: `Error restarting quiz questions: ${err}` });
+    });
 };
 
 // Save study results. uses array of question IDs to change specific questions isCorrect to true
-exports.markQuestionsCorrect = function (quizID, questionIDs) {
-  return new Promise(function (resolve, reject) {
-    // Find the quiz by ID
-    Quiz.findById(quizID)
-      .populate("questions")
-      .exec()
-      .then((quiz) => {
-        if (!quiz) {
-          reject(`Quiz with ID ${quizID} not found`);
-          return;
+exports.markQuestionsCorrect = (req, res) => {
+  let quizID = req.params.id;
+  let questionIDs = req.body.correctQuestions;
+  
+  // Find the quiz by ID
+  db.Quiz.findById(quizID)
+    .populate("questions")
+    .exec()
+    .then((quiz) => {
+      if (!quiz) {
+        res.status(422).json({ error: `Quiz with ID ${quizID} not found`});
+        return;
+      }
+      // Update isCorrect value for each question
+      const updatePromises = questionIDs.map((questionID) => {
+        const question = quiz.questions.find((q) => q._id.equals(questionID));
+        if (!question) {
+          return; // Skip if question not found
         }
-        // Update isCorrect value for each question
-        const updatePromises = questionIDs.map((questionID) => {
-          const question = quiz.questions.find((q) => q._id.equals(questionID));
-          if (!question) {
-            return Promise.resolve(); // Skip if question not found
-          }
-          question.isCorrect = true;
-          return question.save();
-        });
-        // Wait for all question updates to complete
-        return Promise.all(updatePromises);
-      })
-      .then(() => {
-        resolve("Questions marked as correct successfully");
-      })
-      .catch((err) => {
-        reject(`Error marking questions as correct: ${err}`);
+        question.isCorrect = true;
+        return question.save();
       });
-  });
+      // Wait for all question updates to complete
+      res.status(200).json(updatePromises)
+    })
+    .catch((err) => {
+      res.status(422).json({ error: `Error marking questions as correct: ${err}`});
+    });
 };
 
 // ==== Delete ====
 
-// Remove quiz
-exports.deleteQuiz = function (quizID) {
-  return new Promise(function (resolve, reject) {
-    let parentDirectoryID; // Store the parent directory's ID if it exists
+// Remove quiz using Id
+exports.deleteQuiz = (req, res) => {
+  let quizID = req.params.id;
 
-    // Find the quiz by ID to check if it has a parent directory
-    Quiz.findById(quizID)
-      .exec()
-      .then((quiz) => {
-        if (!quiz) {
-          reject(`Quiz with ID ${quizID} not found.`);
-          return;
-        }
+  let parentDirectoryID; // Store the parent directory's ID if it exists
 
-        // Check if the quiz has a parent directory
-        if (quiz.directory) {
-          parentDirectoryID = quiz.directory; // Store the parent directory's ID
-        }
+  // Find the quiz by ID to check if it has a parent directory
+  db.Quiz.findById(quizID)
+    .exec()
+    .then((quiz) => {
+      if (!quiz) {
+        res.status(422).json({ error: `Quiz with ID ${quizID} not found.`});
+        return;
+      }
 
-        const questionIDs = quiz.questions; // Get the list of question references
+      // Check if the quiz has a parent directory
+      if (quiz.directory) {
+        parentDirectoryID = quiz.directory; // Store the parent directory's ID
+      }
 
-        // Delete the associated questions first
-        return Question.deleteMany({ _id: { $in: questionIDs } }).exec();
-      })
-      .then(() => {
-        // After deleting questions, remove the quiz
-        return Quiz.findByIdAndRemove(quizID).exec();
-      })
-      .then(() => {
-        if (parentDirectoryID) {
-          // If the quiz had a parent directory, find and update it
-          return Directory.findByIdAndUpdate(parentDirectoryID, {
-            $pull: { quizzes: quizID }, // Remove the quiz ID from quizzes array
-          }).exec();
-        }
-        return Promise.resolve(); // If no parent directory, resolve immediately
-      })
-      .then(() => {
-        return module.exports.getQuizzes();
-      })
-      .then((retrievedQuiz) => {
-        resolve(retrievedQuiz); // Resolve with the retrieved quiz data
-      })
-      .catch((err) => {
-        reject(`Unable to remove quiz with ID ${quizID}: ${err}`);
-      });
-  });
+      const questionIDs = quiz.questions; // Get the list of question references
+
+      // Delete the associated questions first
+      db.Question.deleteMany({ _id: { $in: questionIDs } }).exec();
+    })
+    .then(() => {
+      // After deleting questions, remove the quiz
+      db.Quiz.findByIdAndRemove(quizID).exec();
+    })
+    .then(() => {
+      if (parentDirectoryID) {
+        // If the quiz had a parent directory, find and update it
+        db.Directory.findByIdAndUpdate(parentDirectoryID, {
+          $pull: { quizzes: quizID }, // Remove the quiz ID from quizzes array
+        }).exec();
+      }
+    })
+    .then(() => {
+      module.exports.getQuizzes();
+    })
+    .then((retrievedQuiz) => {
+      res.status(200).json(retrievedQuiz);
+    })
+    .catch((err) => {
+      res.status(422).json({ error: `Unable to remove quiz with ID ${quizID}: ${err}`});
+    });
 };
 
 // ========== QUESTION ==========
 
 // Update question
-exports.updateQuestion = function (questionID, questionBody) {
-  return new Promise(function (resolve, reject) {
-    const { questionTitle, correct_answer, incorrect_answers } = questionBody;
+exports.updateQuestion = (req, res) => {
+  let questionID = req.params.questionId;
+  let questionBody = req.body;
 
-    if (!questionTitle || !correct_answer || !incorrect_answers) {
-      reject("Invalid question data.");
-    } else {
-      Question.findById(questionID)
-        .exec()
-        .then((question) => {
-          if (!question) {
-            reject(`Question with ID ${questionID} not found.`);
-            return;
-          }
+  const { questionTitle, correct_answer, incorrect_answers } = questionBody;
 
-          // Update question properties
-          question.questionTitle = questionTitle;
-          question.correct_answer = correct_answer;
-          question.incorrect_answers = incorrect_answers;
-
-          // Save the updated question
-          return question.save();
-        })
-        .then((updatedQuestion) => {
-          resolve(updatedQuestion);
-        })
-        .catch((err) => {
-          reject(`Error updating question with ID ${questionID}: ${err}`);
-        });
-    }
-  });
-};
-
-// Remove question.
-exports.deleteQuestion = function (questionID) {
-  return new Promise(function (resolve, reject) {
-    Question.findByIdAndRemove(questionID)
+  if (!questionTitle || !correct_answer || !incorrect_answers) {
+    res.status(422).json({ error: "Invalid question data."});
+    return;
+  } else {
+    db.Question.findById(questionID)
       .exec()
-      .then((deletedQuestion) => {
-        if (!deletedQuestion) {
-          reject(`Question with ID ${questionID} not found.`);
+      .then((question) => {
+        if (!question) {
+          res.status(422).json({ error: `Question with ID ${questionID} not found.`});
           return;
         }
 
-        // Remove the question reference from all quizzes
-        return Quiz.updateMany(
-          { questions: questionID },
-          { $pull: { questions: questionID } }
-        ).exec();
+        // Update question properties
+        question.questionTitle = questionTitle;
+        question.correct_answer = correct_answer;
+        question.incorrect_answers = incorrect_answers;
+
+        // Save the updated question
+        question.save();
       })
-      .then(() => {
-        // Fetch the updated quizzes and save them to persist the changes
-        return Quiz.find({ questions: questionID }).exec();
-      })
-      .then((quizzes) => {
-        const savePromises = quizzes.map((quiz) => quiz.save());
-        return Promise.all(savePromises);
-      })
-      .then(() => {
-        resolve(
-          `Question with ID ${questionID} deleted and removed from all quizzes.`
-        );
+      .then((updatedQuestion) => {
+        res.status(200).json(updatedQuestion)
       })
       .catch((err) => {
-        reject(`Error deleting question with ID ${questionID}: ${err}`);
+        res.status(422).json({ error: `Error updating question with ID ${questionID}: ${err}` });
       });
-  });
+  }
+};
+
+// Remove question.
+exports.deleteQuestion = (req, res) => {
+  let questionID = req.params.questionId;
+
+  db.Question.findByIdAndRemove(questionID)
+    .exec()
+    .then((deletedQuestion) => {
+      if (!deletedQuestion) {
+        res.status(422).json({ error: `Question with ID ${questionID} not found.`});
+        return;
+      }
+
+      // Remove the question reference from all quizzes
+      return db.Quiz.updateMany(
+        { questions: questionID },
+        { $pull: { questions: questionID } }
+      ).exec();
+    })
+    .then(() => {
+      // Fetch the updated quizzes and save them to persist the changes
+      return db.Quiz.find({ questions: questionID }).exec();
+    })
+    .then((quizzes) => {
+      const savePromises = quizzes.map((quiz) => quiz.save());
+      res.status(200).json(savePromises)
+    })
+    .catch((err) => {
+      res.status(422).json({ error: `Error deleting question with ID ${questionID}: ${err}` });
+    });
 };
 
