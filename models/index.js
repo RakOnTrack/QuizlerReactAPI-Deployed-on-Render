@@ -29,7 +29,6 @@ mongoose.Promise = global.Promise;
 
 const db = {}
 db.mongoose = mongoose;
-db.url = process.env.MONGO_URL;
 db.Question = require("../models/question.model.js");
 db.Quiz = require("../models/quiz.model.js");
 db.Directory = require("../models/directory.model.js");

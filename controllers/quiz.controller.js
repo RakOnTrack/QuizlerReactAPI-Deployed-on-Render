@@ -1,14 +1,14 @@
 const OpenAI = require("openai");
 const db = require("../models/index"); // retrieve mongo connection
-const models = require("../models");
 
-// FIXME: store in a models file
-const openai = new OpenAI({
+// FIXME: store in a models file, currently breaks test cases
+/* const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY, // This is also the default, can be omitted
-});
+}); */
 
-let Question = models.userSchema;
-let Quiz = models.quizSchema;
+let Question = db.mongoose.connection.model("Questions", require("../models/question.model"));
+let Quiz = db.mongoose.connection.model("Quizzes", require("../models/quiz.model"));
+let Directory = db.mongoose.connection.model("Directory", require("../models/directory.model"));
 
 // ==== Create ====
 
@@ -18,15 +18,16 @@ exports.addQuiz = async (req, res) =>  {
     const { quizTitle, questions, directoryId } = req.body;
 
     if (!quizTitle || !questions) {
-      res.status(400).json({ error: "Content is empty" });
+      res.status(401).json({ error: `Content is empty:` });
       return;
     }
 
     // Insert all the questions into database
-    const insertedQuestions = await db.Question.insertMany(questions);
+    const insertedQuestions = await Question.insertMany(questions);
 
-    const questionIds = insertedQuestions.map((question) => question._id);
+    const questionIds = insertedQuestions.map((question) => question._id || "");
 
+    // FIXME: can directory be null?
     let directoryToUse = directoryId || process.env.DEFAULT_ROOT_DIRECTORY;
 
     // Initiate new quiz object with data input
@@ -40,12 +41,12 @@ exports.addQuiz = async (req, res) =>  {
     const savedQuiz = await newestQuiz.save();
 
     // Add Quiz to a Directory
-    await db.Directory.findByIdAndUpdate(savedQuiz.parentDirectory, {
+    await Directory.findByIdAndUpdate(savedQuiz.parentDirectory, {
       $push: { quizzes: savedQuiz._id },
     });
-
+  
     // gets Quiz Id and returns that
-    await module.exports.getQuiz(savedQuiz._id)
+    await getQuiz(savedQuiz._id)
       .then(data => {
         res.status(200).json(data)
       });
@@ -54,7 +55,7 @@ exports.addQuiz = async (req, res) =>  {
       res.status(11000).json({ error: "Quiz Title already taken" });
       return;
     } else {
-      res.status(400).json({ error: "There was an error creating the quiz: " + err.message });
+      res.status(404).json({ error: "There was an error creating the quiz: " + err.message });
       return;
     }
   }
@@ -440,3 +441,26 @@ exports.deleteQuestion = (req, res) => {
     });
 };
 
+// ==== INTERNAL FUNCTIONS ====
+
+// get a single quiz.
+function getQuiz(quizID) {
+  return new Promise(function (resolve, reject) {
+    Quiz.findById(quizID)
+      .populate({
+        path: "questions",
+        model: "Questions", // Assuming 'Question' is the model name for questions
+      })
+      .exec()
+      .then((quiz) => {
+        if (quiz) {
+          resolve(quiz);
+        } else {
+          reject(`Quiz with ID ${quizID} not found`);
+        }
+      })
+      .catch((err) => {
+        reject(`Unable to retrieve quiz: ${err}`);
+      });
+  });
+};

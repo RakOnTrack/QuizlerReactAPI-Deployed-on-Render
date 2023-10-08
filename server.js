@@ -18,7 +18,9 @@ app.get("/", (req, res) => {
 
 const HTTP_PORT = process.env.PORT || 8080;
 
-db.mongoose.connect(db.url)
+let database_uri = process.env.MONGO_URL;
+
+db.mongoose.connect(database_uri)
   .then(() => {
     app.listen(HTTP_PORT, () => {
       console.log("API listening on: " + HTTP_PORT);
