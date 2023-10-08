@@ -415,7 +415,7 @@ describe("Quiz API Tests", () => {
     });
 
      /** Test Case 13:
-     * Update the question and its contents using the question ID
+     * Delete the question using its ID
      */
      describe("DELETE /api/quizzes/questions/:questionId", () => {
         it("should remove the question using its ID", async () => {
