@@ -14,7 +14,7 @@ const connect = async () => {
     try {
         mongo = await MongoMemoryServer.create();
         const uri = mongo.getUri();
-        process.env.MONGO_URL = uri;
+        //process.env.MONGO_URL = uri;
         await mongoose.connect(uri, {})
 
         console.log(`Test MongoDB connected: ${uri}`)
