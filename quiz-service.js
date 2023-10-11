@@ -127,10 +127,10 @@ module.exports.addQuiz = async function (quizData) {
   }
 };
 
-module.exports.addQuizWithAI = async function (req) {
+module.exports.addQuizWithAI = async function (reqBody) {
   return new Promise(async (resolve, reject) => {
     // Return a promise
-    const { quizTopic, questionCount } = req;
+    const { quizTopic, questionCount } = reqBody;
 
     console.error(quizTopic);
 

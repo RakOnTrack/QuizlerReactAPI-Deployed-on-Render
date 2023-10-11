@@ -28,8 +28,15 @@ app.post("/api/quizzes/", (req, res) => {
     });
 });
 
+const multer = require("multer");
+const upload = multer(); // Create an instance of multer
+
 // add a quiz using openai api to generate it
-app.post("/api/quizzes/openai", async (req, res) => {
+// Add a quiz using openai api to generate it
+
+// doesnt work if the quizTopic is more than 2100 tokens (5500 characters.
+// we should get some kind of library that counts the number of characters in the quizTopic, so the user knows how much to add/remove.
+app.post("/api/quizzes/openai", upload.none(), async (req, res) => {
   quizService
     .addQuizWithAI(req.body)
     .then((data) => {
