@@ -35,8 +35,9 @@ exports.createDirectory = async (req, res) => {
         }
 
         // After creating the directory, call the readDirectory function to retrieve its details
-        const directoryDetails = await readDirectory(parentDirectoryId);
-        res.status(200).json(directoryDetails);
+        await readDirectory(parentDirectoryId).then((directoryDetails) => {
+            res.status(200).json(directoryDetails);
+        });
     } catch (error) {
         res.status(401).json({ error: "Error creating directory: " + error});
     }

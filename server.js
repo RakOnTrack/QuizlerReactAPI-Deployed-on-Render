@@ -4,6 +4,8 @@ const app = express();
 const cors = require("cors");
 require("dotenv").config();
 const db = require("./models");
+const quizRoutes = require("./routes/quiz.routes.js")
+const directoryRoutes = require('./routes/directory.routes.js');
 
 app.use(cors()); // go through cors policy for requests
 
@@ -15,6 +17,10 @@ app.use(express.urlencoded({ extended: true })); // parse requests application/x
 app.get("/", (req, res) => {
   res.json({ message: "Quizler App" });
 });
+
+app.use('/api/quizzes', quizRoutes);
+app.use('/api/directory', directoryRoutes);
+//require("./routes/user.routes")(app);
 
 const HTTP_PORT = process.env.PORT || 8080;
 
@@ -30,7 +36,3 @@ db.mongoose.connect(database_uri)
     console.log("Unable to start the server: " + err);
     process.exit();
   });
-
-app.use('/api/quizzes', require("./routes/quiz.routes.js"));
-require("./routes/directory.routes.js")(app);
-//require("./routes/user.routes")(app);

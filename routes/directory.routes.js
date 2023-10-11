@@ -14,7 +14,7 @@ module.exports = app => {
     );
     
     //read directory, going to default root directory
-    router.get("/", res.redirect(`/api/directory/${process.env.DEFAULT_ROOT_DIRECTORY}`));
+    router.get("/", res.redirect(`/${process.env.DEFAULT_ROOT_DIRECTORY}`));
     
     // Read directory using its ID
     router.get("/:id", directories.readDirectory);
@@ -35,5 +35,5 @@ module.exports = app => {
     // chloe: changed the route call since its more related to directories
     router.put("/move", directories.moveQuiz);
 
-    app.use('/api/directory', router); // uses "/api/directory before other routes"
+    module.exports = router;
 };

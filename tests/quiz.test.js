@@ -446,5 +446,7 @@ describe("Quiz API Tests", () => {
             expect(deleteResult.status).toBe(200);
         });
     });
-})
+});
+
+/* module.exports = app; */
 
