@@ -20,6 +20,9 @@ router.post("/openai", async (req, res) => {
 // Get all quizzes
 router.get("/", quizService.getQuizzes);
 
+// Get all quizzes matching the query
+router.get("", quizService.getQuizzes);
+
 // Get specific Quiz by ID
 router.get("/:id", quizService.getQuiz);
 

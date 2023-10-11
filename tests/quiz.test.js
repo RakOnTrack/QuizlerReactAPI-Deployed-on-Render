@@ -446,7 +446,36 @@ describe("Quiz API Tests", () => {
             expect(deleteResult.status).toBe(200);
         });
     });
+
+     /** Test Case 14:
+     * Get a quiz by searching by its quizTitle query
+     */
+     describe("GET /api/quizzes?quizTitle=", () => {
+        it("should retrieve related quizzes to the quizTitle query", async () => {
+            let testQuizTitle = "Searchable Test Quiz Title";
+            let testQuestions = [
+                {
+                    questionTitle: "Test Question Title 1",
+                    correct_answer: "Correct",
+                    incorrect_answers: ["Incorrect 1", "Incorrect 2", "Incorrect 3"]
+                },
+                {
+                    questionTitle: "Test Question Title 2",
+                    correct_answer: "Correct",
+                    incorrect_answers: ["Incorrect 1", "Incorrect 2", "Incorrect 3"]
+                }
+            ]
+
+            const postResult = await request(app).post("/api/quizzes").send({
+                quizTitle: testQuizTitle,
+                questions: testQuestions,
+                parentDirectory: "test",
+            })
+            expect(postResult.status).toBe(200);
+
+            const getResult = await request(app).get(`/api/quizzes?quizTitle="${testQuizTitle}"`);
+            expect(getResult.status).toBe(200);
+            expect(getResult.body.length).toBe(1);
+        });
+    });
 });
-
-/* module.exports = app; */
-

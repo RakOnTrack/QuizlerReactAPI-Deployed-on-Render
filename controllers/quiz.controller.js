@@ -129,43 +129,94 @@ function generatePrompt(studyContent, questionCount) {
 
 // ==== Read ====
 
+// jfjn?title=""
 // get all quizzes. this just gets the quizTitle, _id, number of questions, and number of correct questions
 exports.getQuizzes = (req, res) => {
-  Quiz.aggregate([
-    {
-      $lookup: {
-        from: "questions", // The name of the questions collection
-        localField: "questions",
-        foreignField: "_id",
-        as: "questionsData",
+  if (req.query.quizTitle) {
+    // removes the double quotation mark
+    let searchQuery = (req.query.quizTitle).replace(/["]+/g, '');
+
+    // Use aggregation to filter quizzes by quizTitle
+    Quiz.aggregate([
+      {
+        $match: {
+          quizTitle: {
+            $regex: new RegExp(searchQuery, 'i') // Case-insensitive search
+          }
+        }
       },
-    },
-    {
-      $project: {
-        _id: 1,
-        quizTitle: 1,
-        numberOfQuestions: { $size: "$questionsData" }, // Count questions
-        numberOfCorrectQuestions: {
-          $size: {
-            $filter: {
-              input: "$questionsData",
-              as: "question",
-              cond: { $eq: ["$$question.isCorrect", true] }, // Count isCorrect = true
+      {
+        $lookup: {
+          from: "questions", // The name of the questions collection
+          localField: "questions",
+          foreignField: "_id",
+          as: "questionsData",
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          quizTitle: 1,
+          numberOfQuestions: { $size: "$questionsData" }, // Count questions
+          numberOfCorrectQuestions: {
+            $size: {
+              $filter: {
+                input: "$questionsData",
+                as: "question",
+                cond: { $eq: ["$$question.isCorrect", true] }, // Count isCorrect = true
+              },
             },
           },
         },
       },
-    },
-  ])
-  .exec()
-  .then((quizzes) => {
-    res.status(200).json(quizzes);
-  })
-  .catch((err) => {
-    res.status(500).send({
-      message: err.message || "Error occured retreiving all quizzes."
+    ])
+    .exec()
+    .then((quizzes) => {
+      // returns the search result
+      res.status(200).json(quizzes);
+    })
+    .catch(() => {
+      // no item returns? So just returns an empty
+      res.status(250).json({})
     });
-  });
+    return;
+  } else {
+    Quiz.aggregate([
+      {
+        $lookup: {
+          from: "questions", // The name of the questions collection
+          localField: "questions",
+          foreignField: "_id",
+          as: "questionsData",
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          quizTitle: 1,
+          numberOfQuestions: { $size: "$questionsData" }, // Count questions
+          numberOfCorrectQuestions: {
+            $size: {
+              $filter: {
+                input: "$questionsData",
+                as: "question",
+                cond: { $eq: ["$$question.isCorrect", true] }, // Count isCorrect = true
+              },
+            },
+          },
+        },
+      },
+    ])
+    .exec()
+    .then((quizzes) => {
+      res.status(200).json(quizzes);
+    })
+    .catch((err) => {
+      res.status(500).send({
+        message: err.message || "Error occured retreiving all quizzes."
+      });
+    });
+  }
 };
 
 // TODO: eventually we'll have to make a condition where if the quiz has more than 50 questions, it first only add the first half, and then a second half using another call

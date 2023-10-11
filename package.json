@@ -4,7 +4,7 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "test": "cross-env NODE_ENV=test jest --forceExit --runInBand --detectOpenHandles",
+    "test": "cross-env NODE_ENV=test jest --forceExit --runInBand --detectOpenHandles --verbose",
     "start": "node server.js",
     "dev": "nodemon server.js"
   },
