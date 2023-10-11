@@ -27,7 +27,7 @@ describe("Directory API Tests", () => {
     });
 
     /** Test Case 1:
-     * Creates a directory given a title name, no duplicates
+     * Creates a directory given a title name, no parent directory
      */
     describe("POST /api/directory", () => {
         it("should create a directory, no sub or parent directory", async () => {
@@ -38,12 +38,12 @@ describe("Directory API Tests", () => {
                 parentDirectoryId: null
             })
             //expect(postResult.status).toBe(200);
-            console.log(postResult.status);
+            console.log(postResult.body);
         });
     });
 
     /** Test Case 2:
-     * Creates a directory given a title name, there is a duplicate
+     * Creates a directory given a title name, there is a parent directory
      */
     describe("POST /api/directory", () => {
         it("should create a directory, has a parent directory", async () => {
@@ -54,7 +54,7 @@ describe("Directory API Tests", () => {
                 parentDirectoryId: "testId"
             })
             //expect(postResult.status).toBe(200);
-            console.log(postResult.status);
+            console.log(postResult.body);
         });
     });
 })

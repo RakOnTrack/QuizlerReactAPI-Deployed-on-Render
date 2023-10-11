@@ -42,6 +42,21 @@ exports.createDirectory = async (req, res) => {
         res.status(401).json({ error: "Error creating directory: " + error});
     }
 };
+
+// Read directory, going to default root directory
+// chloe: might want to remove this if its not being used often
+exports.redirectToRoot = async (req, res) => {
+    let directoryId = process.env.DEFAULT_ROOT_DIRECTORY;
+    
+    try {
+        const directory_result = await Directory.findById(directoryId);
+
+        // TODO: needs to return from this ID, add other functions
+        res.status(200).json(directory_result);
+    } catch (error) {
+        res.status(401).json({ error: "Error creating directory: " + error});
+    }
+}
   
 // Reading a directory and its items using its ID
 exports.readDirectory = async (req, res) => {
