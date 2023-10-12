@@ -1,36 +1,9 @@
-const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const models = require("../models");
 
-let mongoDBConnectionString = process.env.MONGO_URL;
+let User = models.userSchema;
 
-let Schema = mongoose.Schema;
-
-let userSchema = new Schema({
-    userName: {
-        type: String,
-        unique: true
-    },
-    password: String,
-
-});
-
-let User;
-
-module.exports.connect = function () {
-    return new Promise(function (resolve, reject) {
-        let db = mongoose.createConnection(mongoDBConnectionString);
-
-        db.on('error', err => {
-            reject(err);
-        });
-
-        db.once('open', () => {
-            User = db.model("users", userSchema);
-            resolve();
-        });
-    });
-};
-
+// Create a new user
 module.exports.registerUser = function (userData) {
     return new Promise(function (resolve, reject) {
 
@@ -58,6 +31,7 @@ module.exports.registerUser = function (userData) {
     });
 };
 
+// Check if user exists
 module.exports.checkUser = function (userData) {
     return new Promise(function (resolve, reject) {
 
