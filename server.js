@@ -36,6 +36,7 @@ const upload = multer(); // Create an instance of multer
 
 // doesnt work if the quizTopic is more than 2100 tokens (5500 characters.
 // we should get some kind of library that counts the number of characters in the quizTopic, so the user knows how much to add/remove.
+// or maybe we could use an ai model that can work with more tokens.
 app.post("/api/quizzes/openai", upload.none(), async (req, res) => {
   quizService
     .addQuizWithAI(req.body)
