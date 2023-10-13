@@ -6,14 +6,18 @@ const quizService = require("../controllers/quiz.controller.js");
 router.post("/", quizService.addQuiz);
 
 // FIXME: Add a quiz using openai api to generate it
-router.post("/openai", async (req, res) => {
-    quizService
+const multer = require('multer');
+const upload = multer(); // Create an instance of multer
+
+// Add a quiz using openai api to generate it
+router.post("/openai", upload.none(), async (req, res) => {
+  quizService
     .addQuizWithAI(req.body)
     .then((data) => {
-        res.json(data);
+      res.json(data);
     })
     .catch((msg) => {
-        res.status(422).json({ error: msg });
+      res.status(422).json({ error: msg });
     });
 });
 

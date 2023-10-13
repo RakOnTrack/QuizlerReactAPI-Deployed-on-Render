@@ -2,18 +2,27 @@ const OpenAI = require("openai");
 const db = require("../models/index"); // retrieve mongo connection
 
 // FIXME: store in a models file, currently breaks test cases
-/* const openai = new OpenAI({
+const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY, // This is also the default, can be omitted
-}); */
+});
 
-let Question = db.mongoose.connection.model("Questions", require("../models/question.model"));
-let Quiz = db.mongoose.connection.model("Quizzes", require("../models/quiz.model"));
-let Directory = db.mongoose.connection.model("Directory", require("../models/directory.model"));
+let Question = db.mongoose.connection.model(
+  "Questions",
+  require("../models/question.model")
+);
+let Quiz = db.mongoose.connection.model(
+  "Quizzes",
+  require("../models/quiz.model")
+);
+let Directory = db.mongoose.connection.model(
+  "Directory",
+  require("../models/directory.model")
+);
 
 // ==== Create ====
 
 // add a new quiz
-exports.addQuiz = async (req, res) =>  {
+exports.addQuiz = async (req, res) => {
   try {
     const { quizTitle, questions, directoryId } = req.body;
 
@@ -44,18 +53,19 @@ exports.addQuiz = async (req, res) =>  {
     await Directory.findByIdAndUpdate(savedQuiz.parentDirectory, {
       $push: { quizzes: savedQuiz._id },
     });
-  
+
     // gets Quiz Id and returns that
-    await getQuiz(savedQuiz._id)
-      .then(data => {
-        res.status(200).json(data)
-      });
+    await getQuiz(savedQuiz._id).then((data) => {
+      res.status(200).json(data);
+    });
   } catch (err) {
     if (err.code === 11000) {
       res.status(11000).json({ error: "Quiz Title already taken" });
       return;
     } else {
-      res.status(404).json({ error: "There was an error creating the quiz: " + err.message });
+      res.status(404).json({
+        error: "There was an error creating the quiz: " + err.message,
+      });
       return;
     }
   }
@@ -89,7 +99,7 @@ exports.addQuizWithAI = async function (req) {
       const formattedResponse = JSON.parse(completionText); // Parse the JSON string
 
       // Assuming 'addQuiz' is an asynchronous function that returns a promise
-      const data = await module.exports.addQuiz(formattedResponse);
+      const data = await addQuiz(formattedResponse);
 
       resolve(data); // Resolve with the retrieved data
     } catch (error) {
@@ -134,16 +144,16 @@ function generatePrompt(studyContent, questionCount) {
 exports.getQuizzes = (req, res) => {
   if (req.query.quizTitle) {
     // removes the double quotation mark
-    let searchQuery = (req.query.quizTitle).replace(/["]+/g, '');
+    let searchQuery = req.query.quizTitle.replace(/["]+/g, "");
 
     // Use aggregation to filter quizzes by quizTitle
     Quiz.aggregate([
       {
         $match: {
           quizTitle: {
-            $regex: new RegExp(searchQuery, 'i') // Case-insensitive search
-          }
-        }
+            $regex: new RegExp(searchQuery, "i"), // Case-insensitive search
+          },
+        },
       },
       {
         $lookup: {
@@ -170,15 +180,15 @@ exports.getQuizzes = (req, res) => {
         },
       },
     ])
-    .exec()
-    .then((quizzes) => {
-      // returns the search result
-      res.status(200).json(quizzes);
-    })
-    .catch(() => {
-      // no item returns? So just returns an empty
-      res.status(250).json({})
-    });
+      .exec()
+      .then((quizzes) => {
+        // returns the search result
+        res.status(200).json(quizzes);
+      })
+      .catch(() => {
+        // no item returns? So just returns an empty
+        res.status(250).json({});
+      });
     return;
   } else {
     Quiz.aggregate([
@@ -207,15 +217,15 @@ exports.getQuizzes = (req, res) => {
         },
       },
     ])
-    .exec()
-    .then((quizzes) => {
-      res.status(200).json(quizzes);
-    })
-    .catch((err) => {
-      res.status(500).send({
-        message: err.message || "Error occured retreiving all quizzes."
+      .exec()
+      .then((quizzes) => {
+        res.status(200).json(quizzes);
+      })
+      .catch((err) => {
+        res.status(500).send({
+          message: err.message || "Error occured retreiving all quizzes.",
+        });
       });
-    });
   }
 };
 
@@ -234,11 +244,15 @@ exports.getQuiz = (req, res) => {
       if (quiz) {
         res.status(200).json(quiz);
       } else {
-        res.status(404).json({ error: `Quiz with ID ${quizID} does not exist` });
+        res
+          .status(404)
+          .json({ error: `Quiz with ID ${quizID} does not exist` });
       }
     })
     .catch((err) => {
-      res.status(422).json({ error: `Quiz with ID ${quizID} could not be found: ${err}` });
+      res
+        .status(422)
+        .json({ error: `Quiz with ID ${quizID} could not be found: ${err}` });
     });
 };
 
@@ -306,11 +320,13 @@ exports.addQuestion = async (req, res) => {
             });
           })
           .catch((err) => {
-            res.status(422).json({ error: `Unable to update questions for quiz with ID: ${quizID}: ${err}` });
+            res.status(422).json({
+              error: `Unable to update questions for quiz with ID: ${quizID}: ${err}`,
+            });
           });
       })
       .catch((err) => {
-        res.status(422).json({ error: `Error saving new question: ${err}`});
+        res.status(422).json({ error: `Error saving new question: ${err}` });
       });
   }
 };
@@ -335,10 +351,12 @@ exports.restartQuiz = (req, res) => {
 
       // Wait for all question saves to complete
       // FIXME: chloe - btw this returns an empty object, is it suppose to be like this?
-      res.status(200).json(updatedQuestionsPromises)
+      res.status(200).json(updatedQuestionsPromises);
     })
     .catch((err) => {
-      res.status(422).json({ error: `Error restarting quiz questions: ${err}` });
+      res
+        .status(422)
+        .json({ error: `Error restarting quiz questions: ${err}` });
     });
 };
 
@@ -346,14 +364,14 @@ exports.restartQuiz = (req, res) => {
 exports.markQuestionsCorrect = (req, res) => {
   let quizID = req.params.id;
   let questionIDs = req.body.correctQuestions;
-  
+
   // Find the quiz by ID
   Quiz.findById(quizID)
     .populate("questions")
     .exec()
     .then((quiz) => {
       if (!quiz) {
-        res.status(422).json({ error: `Quiz with ID ${quizID} not found`});
+        res.status(422).json({ error: `Quiz with ID ${quizID} not found` });
         return;
       }
       // Update isCorrect value for each question
@@ -367,10 +385,12 @@ exports.markQuestionsCorrect = (req, res) => {
       });
       // Wait for all question updates to complete
       // FIXME: chloe - btw this returns an empty object, is it suppose to be like this?
-      res.status(200).json(updatePromises)
+      res.status(200).json(updatePromises);
     })
     .catch((err) => {
-      res.status(422).json({ error: `Error marking questions as correct: ${err}`});
+      res
+        .status(422)
+        .json({ error: `Error marking questions as correct: ${err}` });
     });
 };
 
@@ -387,7 +407,7 @@ exports.deleteQuiz = (req, res) => {
     .exec()
     .then((quiz) => {
       if (!quiz) {
-        res.status(422).json({ error: `Quiz with ID ${quizID} not found.`});
+        res.status(422).json({ error: `Quiz with ID ${quizID} not found.` });
         return;
       }
 
@@ -420,7 +440,9 @@ exports.deleteQuiz = (req, res) => {
       });
     })
     .catch((err) => {
-      res.status(422).json({ error: `Unable to remove quiz with ID ${quizID}: ${err}`});
+      res
+        .status(422)
+        .json({ error: `Unable to remove quiz with ID ${quizID}: ${err}` });
     });
 };
 
@@ -434,14 +456,16 @@ exports.updateQuestion = (req, res) => {
   const { questionTitle, correct_answer, incorrect_answers } = questionBody;
 
   if (!questionTitle || !correct_answer || !incorrect_answers) {
-    res.status(422).json({ error: "Invalid question data."});
+    res.status(422).json({ error: "Invalid question data." });
     return;
   } else {
     Question.findById(questionID)
       .exec()
       .then((question) => {
         if (!question) {
-          res.status(422).json({ error: `Question with ID ${questionID} not found.`});
+          res
+            .status(422)
+            .json({ error: `Question with ID ${questionID} not found.` });
           return;
         }
 
@@ -452,11 +476,13 @@ exports.updateQuestion = (req, res) => {
 
         // Save the updated question
         question.save().then((updatedQuestion) => {
-          res.status(200).json(updatedQuestion)
+          res.status(200).json(updatedQuestion);
         });
       })
       .catch((err) => {
-        res.status(422).json({ error: `Error updating question with ID ${questionID}: ${err}` });
+        res.status(422).json({
+          error: `Error updating question with ID ${questionID}: ${err}`,
+        });
       });
   }
 };
@@ -469,7 +495,9 @@ exports.deleteQuestion = (req, res) => {
     .exec()
     .then((deletedQuestion) => {
       if (!deletedQuestion) {
-        res.status(422).json({ error: `Question with ID ${questionID} not found.`});
+        res
+          .status(422)
+          .json({ error: `Question with ID ${questionID} not found.` });
         return;
       }
 
@@ -486,10 +514,12 @@ exports.deleteQuestion = (req, res) => {
     .then((quizzes) => {
       const savePromises = quizzes.map((quiz) => quiz.save());
       //FIXME: Returns an empty object
-      res.status(200).json(savePromises)
+      res.status(200).json(savePromises);
     })
     .catch((err) => {
-      res.status(422).json({ error: `Error deleting question with ID ${questionID}: ${err}` });
+      res.status(422).json({
+        error: `Error deleting question with ID ${questionID}: ${err}`,
+      });
     });
 };
 
@@ -515,7 +545,7 @@ function getQuiz(quizID) {
         reject(`Unable to retrieve quiz: ${err}`);
       });
   });
-};
+}
 
 // Get all the quizzes
 function getQuizzes() {
@@ -554,4 +584,49 @@ function getQuizzes() {
         reject(`Unable to retrieve quizzes: ${err}`);
       });
   });
-};
+}
+
+function addQuiz(quizData) {
+  return new Promise(function (resolve, reject) {
+    const { quizTitle, questions, directoryId } = quizData;
+
+    if (!quizTitle || !questions) {
+      reject("quizTitle, questions, or directoryId not valid.");
+    } else {
+      Question.insertMany(questions)
+        .then((insertedQuestions) => {
+          const questionIds = insertedQuestions.map((question) => question._id);
+          let newestQuiz = new Quiz({
+            quizTitle,
+            questions: questionIds,
+          });
+          // we need to do it this way because if directoryID isnt defined, then it needs to become the default value, set by the schema
+
+          newestQuiz.directory =
+            directoryId || process.env.DEFAULT_ROOT_DIRECTORY;
+
+          return newestQuiz.save();
+        })
+        .then((savedQuiz) => {
+          // Store the _id of the newly created quiz
+
+          // Add the new quiz's _id to the directory's quizzes array
+          return Directory.findByIdAndUpdate(savedQuiz.directory, {
+            $push: { quizzes: savedQuiz._id },
+          }).then(() => {
+            return getQuiz(savedQuiz._id); // Call getQuiz with the newly saved quiz ID
+          });
+        })
+        .then((retrievedQuiz) => {
+          resolve(retrievedQuiz); // Resolve with the retrieved quiz data
+        })
+        .catch((err) => {
+          if (err.code === 11000) {
+            reject("Quiz Title already taken");
+          } else {
+            reject("There was an error creating the quiz: " + err);
+          }
+        });
+    }
+  });
+}
