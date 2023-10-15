@@ -75,7 +75,7 @@ exports.addQuiz = async (req, res) => {
 exports.addQuizWithAI = async function (req) {
   return new Promise(async (resolve, reject) => {
     // Return a promise
-    const { quizTopic, questionCount } = req;
+    const { quizTopic, questionCount, directoryId } = req;
 
     console.error(quizTopic);
 
@@ -91,22 +91,23 @@ exports.addQuizWithAI = async function (req) {
       const completion = await openai.completions.create({
         model: "text-davinci-003",
         prompt: generatePrompt(quizTopic, questionCount),
-        temperature: 1,
-        max_tokens: 2000,
+        temperature: 0.0,
+        max_tokens: 500,
       });
 
       const completionText = completion.choices[0].text;
       const formattedResponse = JSON.parse(completionText); // Parse the JSON string
+      formattedResponse.parentDirectory = directoryId; // Parse the JSON string
 
       // Assuming 'addQuiz' is an asynchronous function that returns a promise
       const data = await addQuiz(formattedResponse);
-
+      console.log(data);
       resolve(data); // Resolve with the retrieved data
     } catch (error) {
       console.error(error);
       reject({
         status: 500,
-        error: "An error occurred during quiz generation.",
+        error: "An error occurred during quiz generation:." + error,
       });
     }
   });
@@ -588,7 +589,7 @@ function getQuizzes() {
 
 function addQuiz(quizData) {
   return new Promise(function (resolve, reject) {
-    const { quizTitle, questions, directoryId } = quizData;
+    const { quizTitle, questions, parentDirectory } = quizData;
 
     if (!quizTitle || !questions) {
       reject("quizTitle, questions, or directoryId not valid.");
@@ -602,8 +603,8 @@ function addQuiz(quizData) {
           });
           // we need to do it this way because if directoryID isnt defined, then it needs to become the default value, set by the schema
 
-          newestQuiz.directory =
-            directoryId || process.env.DEFAULT_ROOT_DIRECTORY;
+          newestQuiz.parentDirectory =
+            parentDirectory || process.env.DEFAULT_ROOT_DIRECTORY;
 
           return newestQuiz.save();
         })
