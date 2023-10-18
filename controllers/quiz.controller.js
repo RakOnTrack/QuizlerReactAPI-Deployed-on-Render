@@ -92,7 +92,7 @@ exports.addQuizWithAI = async function (req) {
         model: "text-davinci-003",
         prompt: generatePrompt(quizTopic, questionCount),
         temperature: 0.0,
-        max_tokens: 500,
+        max_tokens: 800,
       });
 
       const completionText = completion.choices[0].text;
