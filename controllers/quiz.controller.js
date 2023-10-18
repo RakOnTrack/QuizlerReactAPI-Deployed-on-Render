@@ -1,6 +1,6 @@
 const OpenAI = require("openai");
 const db = require("../models/index"); // retrieve mongo connection
-
+require('dotenv').config();
 // FIXME: store in a models file, currently breaks test cases
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY, // This is also the default, can be omitted

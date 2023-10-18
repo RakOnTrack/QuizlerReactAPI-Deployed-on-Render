@@ -6,6 +6,7 @@
   "scripts": {
     "test": "cross-env NODE_ENV=test jest --forceExit --runInBand --detectOpenHandles --verbose",
     "start": "node server.js",
+    "coverage": "jest -c jest.config.js --runInBand --coverage",
     "dev": "nodemon server.js"
   },
   "author": "",
