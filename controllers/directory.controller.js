@@ -123,12 +123,40 @@ exports.readDirectory = async (req, res) => {
       );
     });
 
-    const quizData = sortedQuizzes.map((quiz) => ({
-      _id: quiz._id,
-      quizTitle: quiz.quizTitle,
-      numberOfQuestions: quiz.questions.length,
-      numberOfCorrectQuestions: 0, // Placeholder value to be updated below
-    }));
+    // Calculate the number of correct questions for each quiz
+    const quizData = await Promise.all(
+      sortedQuizzes.map(async (quiz) => {
+        // Find questions data for the quiz
+        const questionsData = await Quiz.aggregate([
+          {
+            $match: { _id: quiz._id },
+          },
+          {
+            $lookup: {
+              from: "questions", // The name of the questions collection
+              localField: "questions",
+              foreignField: "_id",
+              as: "questionsData",
+            },
+          },
+        ]);
+
+        // Calculate the number of correct questions
+        const numberOfCorrectQuestions = questionsData[0].questionsData.reduce(
+          (count, question) => {
+            return count + (question.isCorrect === true ? 1 : 0);
+          },
+          0
+        );
+
+        return {
+          _id: quiz._id,
+          quizTitle: quiz.quizTitle,
+          numberOfQuestions: quiz.questions.length,
+          numberOfCorrectQuestions: numberOfCorrectQuestions,
+        };
+      })
+    );
 
     // Format result directory
     // chloe: can this be in a Directory object?
