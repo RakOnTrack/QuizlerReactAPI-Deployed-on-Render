@@ -1,30 +1,10 @@
 const OpenAI = require("openai");
 const db = require("../models/index"); // retrieve mongo connection
-require("dotenv").config();
+require('dotenv').config();
 // FIXME: store in a models file, currently breaks test cases
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY, // This is also the default, can be omitted
 });
-
-const { Tiktoken } = require("@dqbd/tiktoken/lite");
-const cl100k_base = require("@dqbd/tiktoken/encoders/cl100k_base.json");
-
-function countTokens(prompt, model = "gpt2") {
-  const encoding = new Tiktoken(
-    cl100k_base.bpe_ranks,
-    cl100k_base.special_tokens,
-    cl100k_base.pat_str
-  );
-
-  // Encode the prompt to count tokens
-  const tokens = encoding.encode(prompt);
-
-  // Free the encoder after use
-  encoding.free();
-
-  // Return the number of tokens
-  return tokens.length;
-}
 
 let Question = db.mongoose.connection.model(
   "Questions",
@@ -95,11 +75,9 @@ exports.addQuiz = async (req, res) => {
 exports.addQuizWithAI = async function (req) {
   return new Promise(async (resolve, reject) => {
     // Return a promise
-
     const { quizTopic, questionCount, directoryId } = req;
-    const MAXINPUTTOKENS = 3000;
 
-    // console.error(quizTopic);
+    console.error(quizTopic);
 
     try {
       if (!quizTopic || quizTopic.trim().length === 0) {
@@ -109,61 +87,22 @@ exports.addQuizWithAI = async function (req) {
         });
       }
 
-      const MAXINPUTTOKENS = 3000;
-      const prompt = generatePrompt(quizTopic, 5);
-      const tokenCount = countTokens(prompt);
-      console.log(`Token count: ${tokenCount}`);
+      // Use 'await' here to asynchronously wait for the completion
+      const completion = await openai.completions.create({
+        model: "text-davinci-003",
+        prompt: generatePrompt(quizTopic, questionCount),
+        temperature: 0.0,
+        max_tokens: 800,
+      });
 
-      if (tokenCount > MAXINPUTTOKENS) {
-        const truncatePercentage = MAXINPUTTOKENS / tokenCount;
+      const completionText = completion.choices[0].text;
+      const formattedResponse = JSON.parse(completionText); // Parse the JSON string
+      formattedResponse.parentDirectory = directoryId; // Parse the JSON string
 
-        // Calculate the index to truncate the prompt.
-        const truncateIndex = Math.floor(prompt.length * truncatePercentage);
-
-        // Use the text before the calculated index as your prompt.
-        const revisedPrompt = prompt.substring(0, truncateIndex);
-        console.log(`Revised prompt: ${revisedPrompt}`);
-        const newTokenCount = countTokens(revisedPrompt);
-        console.log(`Token count second: ${newTokenCount}`);
-
-        // Find the index of the last period character.
-        let lastPeriodIndex = -1;
-        for (let i = revisedPrompt.length - 1; i >= 0; i--) {
-          if (revisedPrompt[i] === ".") {
-            lastPeriodIndex = i;
-            break; // Exit the loop once a period is found.
-          }
-        }
-
-        if (lastPeriodIndex !== -1) {
-          // The 'lastPeriodIndex' now contains the index of the last period character.
-          // You can use this index to truncate the prompt to the last period.
-          const finalPrompt = revisedPrompt.substring(0, lastPeriodIndex + 1);
-          console.log(`Final prompt: ${finalPrompt}`);
-          console.log(`Token count final: ${countTokens(finalPrompt)}`);
-        }
-      }
-
-      // TODO check if tokenCount is more than 3k,
-      //  YES: find the index of the last period chatacter than is less than 3k tokens
-
-      // // Use 'await' here to asynchronously wait for the completion
-      // const completion = await openai.completions.create({
-      //   // model: "text-davinci-003",
-      //   model: "gpt-3.5-turbo",
-      //   prompt: generatePrompt(quizTopic, questionCount),
-      //   temperature: 0.0,
-      //   max_tokens: 800,
-      // });
-
-      // const completionText = completion.choices[0].text;
-      // const formattedResponse = JSON.parse(completionText); // Parse the JSON string
-      // formattedResponse.directoryId = directoryId; // Parse the JSON string
-
-      // // Assuming 'addQuiz' is an asynchronous function that returns a promise
-      // const data = await exports.addQuiz(formattedResponse);
-      // console.log(data);
-      // resolve(data); // Resolve with the retrieved data
+      // Assuming 'addQuiz' is an asynchronous function that returns a promise
+      const data = await addQuiz(formattedResponse);
+      console.log(data);
+      resolve(data); // Resolve with the retrieved data
     } catch (error) {
       console.error(error);
       reject({
@@ -648,47 +587,47 @@ function getQuizzes() {
   });
 }
 
-// function addQuiz(quizData) {
-//   return new Promise(function (resolve, reject) {
-//     const { quizTitle, questions, parentDirectory: directoryId } = quizData;
+function addQuiz(quizData) {
+  return new Promise(function (resolve, reject) {
+    const { quizTitle, questions, parentDirectory } = quizData;
 
-//     if (!quizTitle || !questions) {
-//       reject("quizTitle, questions, or directoryId not valid.");
-//     } else {
-//       Question.insertMany(questions)
-//         .then((insertedQuestions) => {
-//           const questionIds = insertedQuestions.map((question) => question._id);
-//           let newestQuiz = new Quiz({
-//             quizTitle,
-//             questions: questionIds,
-//           });
-//           // we need to do it this way because if directoryID isnt defined, then it needs to become the default value, set by the schema
+    if (!quizTitle || !questions) {
+      reject("quizTitle, questions, or directoryId not valid.");
+    } else {
+      Question.insertMany(questions)
+        .then((insertedQuestions) => {
+          const questionIds = insertedQuestions.map((question) => question._id);
+          let newestQuiz = new Quiz({
+            quizTitle,
+            questions: questionIds,
+          });
+          // we need to do it this way because if directoryID isnt defined, then it needs to become the default value, set by the schema
 
-//           newestQuiz.parentDirectory =
-//             directoryId || process.env.DEFAULT_ROOT_DIRECTORY;
+          newestQuiz.parentDirectory =
+            parentDirectory || process.env.DEFAULT_ROOT_DIRECTORY;
 
-//           return newestQuiz.save();
-//         })
-//         .then((savedQuiz) => {
-//           // Store the _id of the newly created quiz
+          return newestQuiz.save();
+        })
+        .then((savedQuiz) => {
+          // Store the _id of the newly created quiz
 
-//           // Add the new quiz's _id to the directory's quizzes array
-//           return Directory.findByIdAndUpdate(savedQuiz.directory, {
-//             $push: { quizzes: savedQuiz._id },
-//           }).then(() => {
-//             return getQuiz(savedQuiz._id); // Call getQuiz with the newly saved quiz ID
-//           });
-//         })
-//         .then((retrievedQuiz) => {
-//           resolve(retrievedQuiz); // Resolve with the retrieved quiz data
-//         })
-//         .catch((err) => {
-//           if (err.code === 11000) {
-//             reject("Quiz Title already taken");
-//           } else {
-//             reject("There was an error creating the quiz: " + err);
-//           }
-//         });
-//     }
-//   });
-// }
+          // Add the new quiz's _id to the directory's quizzes array
+          return Directory.findByIdAndUpdate(savedQuiz.directory, {
+            $push: { quizzes: savedQuiz._id },
+          }).then(() => {
+            return getQuiz(savedQuiz._id); // Call getQuiz with the newly saved quiz ID
+          });
+        })
+        .then((retrievedQuiz) => {
+          resolve(retrievedQuiz); // Resolve with the retrieved quiz data
+        })
+        .catch((err) => {
+          if (err.code === 11000) {
+            reject("Quiz Title already taken");
+          } else {
+            reject("There was an error creating the quiz: " + err);
+          }
+        });
+    }
+  });
+}
