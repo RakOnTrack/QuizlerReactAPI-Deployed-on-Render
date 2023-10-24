@@ -1,72 +1,21 @@
-import { Configuration, OpenAIApi } from "openai";
+const jsonObject = {
+  quizTitle: "Urban Playground Quiz",
+  questions: [
+    {
+      questionTitle: "What is the atmosphere of an urban playground like?",
+      correct_answer: "Vibrant and dynamic",
+      incorrect_answers: ["Quiet and peaceful", "Loud and chaotic", "Calm and serene"],
+    },
+    {
+      questionTitle: "What type of activities can be found in an urban playground?",
+      correct_answer: "Art, music, and technology",
+      incorrect_answers: ["Sports, shopping, and dining", "Gardening, cooking, and crafting", "Hiking, biking, and swimming"],
+    },
+    // Add more questions here
+  ],
+};
 
-const configuration = new Configuration({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-const openai = new OpenAIApi(configuration);
+// Convert the JSON object to a JSON string
+const jsonString = JSON.stringify(jsonObject, null, 2);
 
-export default async function (req, res) {
-  if (!configuration.apiKey) {
-    res.status(500).json({
-      error: {
-        message:
-          "OpenAI API key not configured, please follow instructions in README.md",
-      },
-    });
-    return;
-  }
-
-  const quizTopic = req.body.quizTopic || "";
-  if (quizTopic.trim().length === 0) {
-    res.status(400).json({
-      error: {
-        message: "Please enter a valid quizTopic",
-      },
-    });
-    return;
-  }
-
-  try {
-    const completion = await openai.createCompletion({
-      model: "text-davinci-003",
-      prompt: generatePrompt(quizTopic),
-      temperature: 1,
-      max_tokens: 2000, // Adjust as needed
-    });
-
-    const completionText = completion.data.choices[0].text;
-    console.log(completionText)
-    res.status(200).json({ result: completionText });
-  } catch (error) {
-    // Consider adjusting the error handling logic for your use case
-    if (error.response) {
-      console.error(error.response.status, error.response.data);
-      res.status(error.response.status).json(error.response.data);
-    } else {
-      console.error(`Error with OpenAI API request: ${error.message}`);
-      res.status(500).json({
-        error: {
-          message: "An error occurred during your request.",
-        },
-      });
-    }
-  }
-}
-
-function generatePrompt(studyTopic) {
-  return `
-  Make me a multiple-choice quiz with 2 questions about ${studyTopic}. The quiz should be in this JSON format:
-
-  {
-    "quizTitle": STRING,
-    "questions": [
-      {
-        "questionTitle": "",
-        "correct_answer": "",
-        "incorrect_answers": []
-      },
-      ...
-    ]
-  }
-`;
-}
+console.log(jsonString);
