@@ -1,13 +1,18 @@
-const router = require('express').Router();
+const router = require("express").Router();
 
 const quizService = require("../controllers/quiz.controller.js");
 
 // Add quiz
 router.post("/", quizService.addQuiz);
+router.post("/:DirId", quizService.addQuizToDir);
 
 // FIXME: Add a quiz using openai api to generate it
-const multer = require('multer');
+const multer = require("multer");
 const upload = multer(); // Create an instance of multer
+
+// Add a quiz using openai api to generate it
+// router.post("/openai", upload.none(), quizService.addQuizWithAI(req.body));
+
 
 // Add a quiz using openai api to generate it
 router.post("/openai", upload.none(), async (req, res) => {
@@ -51,4 +56,4 @@ router.put("/questions/:questionId", quizService.updateQuestion);
 // Remove question.
 router.delete("/questions/:questionId", quizService.deleteQuestion);
 
-module.exports = router
+module.exports = router;

@@ -17,20 +17,23 @@ exports.createDirectory = async (req, res) => {
 
   try {
     if (!name) {
-      res.status(401).json({ error: "Please enter a name for the directory" });
-      return;
+      return res
+        .status(400)
+        .json({ error: "Please enter a name for the directory" });
     }
 
     // Create a new directory with the provided name and parent directory ID
     const newDirectory = new Directory({
       name,
+      parentDirectory: parentDirectoryId,
     });
-
-    newDirectory.parentDirectory =
-      parentDirectoryId || process.env.DEFAULT_ROOT_DIRECTORY; // Set the parent directory if applicable
 
     // Save the new directory
     const savedDirectory = await newDirectory.save();
+
+    if (!savedDirectory) {
+      return res.status(500).json({ error: "Failed to save the directory" });
+    }
 
     // Update the parent directory's subdirectories array
     if (parentDirectoryId) {
@@ -41,12 +44,22 @@ exports.createDirectory = async (req, res) => {
       }
     }
 
-    // After creating the directory, call the readDirectory function to retrieve its details
-    await readDirectory(parentDirectoryId).then((directoryDetails) => {
-      res.status(200).json(directoryDetails);
-    });
+    // If this is a test environment and there's no root directory, return the directory details
+    if (
+      process.env.NODE_ENV === "test" &&
+      req.body.parentDirectoryId === null
+    ) {
+      return res.status(200).json(savedDirectory);
+    }
+
+    // Send a success response
+    return res.status(200).json(savedDirectory);
   } catch (error) {
-    res.status(401).json({ error: "Error creating directory: " + error });
+    console.error(error);
+    // Send an error response
+    return res
+      .status(401)
+      .json({ error: "Error creating directory: " + error.message });
   }
 };
 
@@ -109,6 +122,7 @@ exports.readDirectory = async (req, res) => {
         name: subdirectory.name,
         numberOfSubdirectories: childSubdirectoriesCount,
         numberOfQuizzes: subdirectory.quizzes.length,
+        // parentDirectory: subdirectory.parentDirectory
       });
     }
 
@@ -168,6 +182,9 @@ exports.readDirectory = async (req, res) => {
       subdirectories: subdirectoryData,
       quizzes: quizData,
     };
+    if (directory.parentDirectory) {
+      directory_result.parentDirectory = directory.parentDirectory;
+    }
 
     // Return the structured data
     res.status(200).json(directory_result);

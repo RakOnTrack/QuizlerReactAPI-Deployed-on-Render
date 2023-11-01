@@ -1,6 +1,6 @@
 const OpenAI = require("openai");
 const db = require("../models/index"); // retrieve mongo connection
-require('dotenv').config();
+require("dotenv").config();
 // FIXME: store in a models file, currently breaks test cases
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY, // This is also the default, can be omitted
@@ -68,6 +68,28 @@ exports.addQuiz = async (req, res) => {
       });
       return;
     }
+  }
+};
+
+// add a new quiz and add it to a directory
+exports.addQuizToDir = async (req, res) => {
+  try {
+    // Extract the directory ID from the URL parameters
+    const directoryId = req.params.DirId;
+    if (!directoryId) {
+      res
+        .status(400)
+        .json({ error: "Directory ID is missing in the URL parameter" });
+      return;
+    }
+
+    // Modify the request body to include the directoryId
+    req.body.directoryId = directoryId;
+
+    // Forward the modified request to the addQuiz function
+    await exports.addQuiz(req, res);
+  } catch (err) {
+    res.status(500).json({ error: "Internal server error: " + err.message });
   }
 };
 

@@ -1,4 +1,5 @@
 //FIXME: Add details for function
+const mockData = true;
 
 const { Tiktoken } = require("@dqbd/tiktoken/lite");
 const cl100k_base = require("@dqbd/tiktoken/encoders/cl100k_base.json");
@@ -141,120 +142,123 @@ async function generateResponses() {
   console.log("first prompt: " + firstPrompt);
   console.log("\nsecond prompt: " + sndPrompt);
 
-  // Use 'await' here to asynchronously wait for the completion
-  const completion = await openai.completions.create({
-    model: "text-davinci-003",
-
-    prompt: firstPrompt,
-    temperature: 0.0,
-    max_tokens: 800,
-  });
-
-  const firstResponse = completion.choices[0].text;
-  const formattedResponse = JSON.parse(firstResponse); // Parse the JSON string
-  console.log(
-    "first Response!: " + JSON.stringify(formattedResponse, null, 2)
-
-  )
-
-  // const formattedResponse =  '''"quizTitle":"Urban Playground Quiz","questions":[{"questionTitle":"What is the atmosphere of an urban playground like?","correct_answer":"Vibrant and dynamic","incorrect_answers":["Quiet and peaceful","Loud and chaotic","Calm and serene"]},{"questionTitle":"What type of activities can be found in an urban playground?","correct_answer":"Art, music, and technology","incorrect_answers":["Sports, shopping, and dining","Gardening, cooking, and crafting","Hiking, biking, and swimming"]},{"questionTitle":"What type of people can be found in an urban playground?","correct_answer":"People from all walks of life","incorrect_answers":["Only young people","Only wealthy people","Only people with a certain hobby"]},{"questionTitle":"What type of environment is an urban playground?","correct_answer":"Bustling city","incorrect_answers":["Quiet countryside","Suburban neighborhood","Remote mountain village"]},{"questionTitle":"What is the atmosphere of an urban playground filled with?","correct_answer":"The rhythms of diverse cultures and the aroma of street food","incorrect_answers":["The sound of traffic and the smell of exhaust","The sound of birds and the smell of flowers","The sound of waves and the smell of salt"]}]}'''
-  // const firstResponse = `{
-  //   "quizTitle": "Urban Playground Quiz",
-  //   "questions": [
-  //     {
-  //       "questionTitle": "What is the atmosphere of an urban playground like?",
-  //       "correct_answer": "Vibrant and dynamic",
-  //       "incorrect_answers": ["Quiet and peaceful", "Loud and chaotic", "Calm and serene"]
-  //     },
-  //     {
-  //       "questionTitle": "What type of activities can be found in an urban playground?",
-  //       "correct_answer": "Art, music, and technology",
-  //       "incorrect_answers": ["Sports, shopping, and dining", "Gardening, cooking, and crafting", "Hiking, biking, and swimming"]
-  //     },
-  //     {
-  //       "questionTitle": "What type of people can be found in an urban playground?",
-  //       "correct_answer": "People from all walks of life",
-  //       "incorrect_answers": ["Only young people", "Only wealthy people", "Only people with a certain hobby"]
-  //     },
-  //     {
-  //       "questionTitle": "What type of environment is an urban playground?",
-  //       "correct_answer": "Bustling city",
-  //       "incorrect_answers": ["Quiet countryside", "Suburban neighborhood", "Remote mountain village"]
-  //     },
-  //     {
-  //       "questionTitle": "What is the atmosphere of an urban playground filled with?",
-  //       "correct_answer": "The rhythms of diverse cultures and the aroma of street food",
-  //       "incorrect_answers": ["The sound of traffic and the smell of exhaust", "The sound of birds and the smell of flowers", "The sound of waves and the smell of salt"]
-  //     }
-  //   ]
-  // }`;
+  let firstResponse;
+  if (!mockData) {
+    // Use 'await' here to asynchronously wait for the completion
+    const completion = await openai.completions.create({
+      model: "text-davinci-003",
+      prompt: firstPrompt,
+      temperature: 0.0,
+      max_tokens: 800,
+    });
+    firstResponse = completion.choices[0].text;
+  } else {
+    firstResponse = `{
+      "quizTitle": "Urban Playground Quiz",
+      "questions": [
+        {
+          "questionTitle": "What is the atmosphere of an urban playground like?",
+          "correct_answer": "Vibrant and dynamic",
+          "incorrect_answers": ["Quiet and peaceful", "Loud and chaotic", "Calm and serene"]
+        },
+        {
+          "questionTitle": "What type of activities can be found in an urban playground?",
+          "correct_answer": "Art, music, and technology",
+          "incorrect_answers": ["Sports, shopping, and dining", "Gardening, cooking, and crafting", "Hiking, biking, and swimming"]
+        },
+        {
+          "questionTitle": "What type of people can be found in an urban playground?",
+          "correct_answer": "People from all walks of life",
+          "incorrect_answers": ["Only young people", "Only wealthy people", "Only people with a certain hobby"]
+        },
+        {
+          "questionTitle": "What type of environment is an urban playground?",
+          "correct_answer": "Bustling city",
+          "incorrect_answers": ["Quiet countryside", "Suburban neighborhood", "Remote mountain village"]
+        },
+        {
+          "questionTitle": "What is the atmosphere of an urban playground filled with?",
+          "correct_answer": "The rhythms of diverse cultures and the aroma of street food",
+          "incorrect_answers": ["The sound of traffic and the smell of exhaust", "The sound of birds and the smell of flowers", "The sound of waves and the smell of salt"]
+        }
+      ]
+    }`;
+  }
+  // let formattedResponse = JSON.parse(firstResponse); // Parse the JSON string
   const frstResponseJSON = JSON.parse(firstResponse); // Parse the JSON string
-
-  console.log("formattedResponse: " + JSON.stringify(firstResponse));
-  const messages = [
-    { role: "user", content: firstPrompt },
-    { role: "system", content: firstResponse },
-    { role: "user", content: sndPrompt },
-  ];
+  console.log("first Response!: " + JSON.stringify(firstResponse, null, 2));
+  // console.log("formattedResponse: " + JSON.stringify(firstResponse));
 
   console.log("finished first Completion");
-  // const chatCompletion = await openai.chat.completions.create({
-  //   // messages: [{ role: "user", content: "Say this is a test" }],
-  //   messages: messages,
-  //   model: "gpt-3.5-turbo",
-  // });
 
   // Use 'await' here to asynchronously wait for the completion
   // const = await openai.chat.completions.create({
+  let sndCompletionText;
+  if (!mockData) {
+    const messages = [
+      { role: "user", content: firstPrompt },
+      { role: "assistant", content: firstResponse },
+      { role: "user", content: sndPrompt },
+    ];
+    const sndCompletion = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: messages,
+      temperature: 0.0,
+      max_tokens: 800,
+    });
 
-  const sndCompletion = await openai.chat.completions.create({
-    model: "gpt-3.5-turbo",
-    messages: messages,
-  });
+    sndCompletionText = sndCompletion.choices[0].message.content;
+  } else {
+    sndCompletionText = `{
+    "quizTitle": "Urban Playground Quiz",
+    "questions": [
+      {
+        "questionTitle": "What is the atmosphere of an urban playground like?",
+        "correct_answer": "Vibrant and dynamic",
+        "incorrect_answers": ["Quiet and peaceful", "Loud and chaotic", "Calm and serene"]
+      },
+      {
+        "questionTitle": "What type of activities can be found in an urban playground?",
+        "correct_answer": "Art, music, and technology",
+        "incorrect_answers": ["Sports, shopping, and dining", "Gardening, cooking, and crafting", "Hiking, biking, and swimming"]
+      },
+      {
+        "questionTitle": "What type of people can be found in an urban playground?",
+        "correct_answer": "People from all walks of life",
+        "incorrect_answers": ["Only young people", "Only wealthy people", "Only people with a certain hobby"]
+      },
+      {
+        "questionTitle": "What type of environment is an urban playground?",
+        "correct_answer": "Bustling city",
+        "incorrect_answers": ["Quiet countryside", "Suburban neighborhood", "Remote mountain village"]
+      },
+      {
+        "questionTitle": "What is the atmosphere of an urban playground filled with?",
+        "correct_answer": "The rhythms of diverse cultures and the aroma of street food",
+        "incorrect_answers": ["The sound of traffic and the smell of exhaust", "The sound of birds and the smell of flowers", "The sound of waves and the smell of salt"]
+      }
+    ]
+  }`;
+  }
 
-  const sndCompletionText = sndCompletion.choices[0].message.content;
-  // const sndCompletionText = `{
-  //   "quizTitle": "Urban Playground Quiz",
-  //   "questions": [
-  //     {
-  //       "questionTitle": "What is the atmosphere of an urban playground like?",
-  //       "correct_answer": "Vibrant and dynamic",
-  //       "incorrect_answers": ["Quiet and peaceful", "Loud and chaotic", "Calm and serene"]
-  //     },
-  //     {
-  //       "questionTitle": "What type of activities can be found in an urban playground?",
-  //       "correct_answer": "Art, music, and technology",
-  //       "incorrect_answers": ["Sports, shopping, and dining", "Gardening, cooking, and crafting", "Hiking, biking, and swimming"]
-  //     },
-  //     {
-  //       "questionTitle": "What type of people can be found in an urban playground?",
-  //       "correct_answer": "People from all walks of life",
-  //       "incorrect_answers": ["Only young people", "Only wealthy people", "Only people with a certain hobby"]
-  //     },
-  //     {
-  //       "questionTitle": "What type of environment is an urban playground?",
-  //       "correct_answer": "Bustling city",
-  //       "incorrect_answers": ["Quiet countryside", "Suburban neighborhood", "Remote mountain village"]
-  //     },
-  //     {
-  //       "questionTitle": "What is the atmosphere of an urban playground filled with?",
-  //       "correct_answer": "The rhythms of diverse cultures and the aroma of street food",
-  //       "incorrect_answers": ["The sound of traffic and the smell of exhaust", "The sound of birds and the smell of flowers", "The sound of waves and the smell of salt"]
-  //     }
-  //   ]
-  // }`;
   const sndFormattedResponse = JSON.parse(sndCompletionText); // Parse the JSON string
   console.log("sndformattedResponse: " + sndCompletionText);
-  const combinedQuestions = frstResponseJSON.questions.concat(sndFormattedResponse.questions);
+  const combinedQuestions = frstResponseJSON.questions.concat(
+    sndFormattedResponse.questions
+  );
   // sndFormattedResponse.questions.forEach((question) => {
   //   frstResponseJSON.questions.push(question);
   // });
 
-  console.log(
-    "combined formattedResponse!: " + JSON.stringify(combinedQuestions, null, 2)
-  );
+// ... (previous code)
+
+async function main() {
+  try {
+    const questions = await generateResponses();
+    console.log("question count: " + questions.length);
+  } catch (error) {
+    console.error("An error occurred:", error);
+  }
 }
 
-generateResponses().catch((error) => {
-  console.error("An error occurred:", error);
-});
+// main();
