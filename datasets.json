@@ -1,0 +1,1222 @@
+[
+  {
+    "quizTitle": "Animal Behavior and Robotics",
+    "questions": [
+      {
+        "questionTitle": "What is the primary source of inspiration for designing robot hands and walking machines?",
+        "correct_answer": "Nature",
+        "incorrect_answers": [
+          "Robotic research",
+          "Artificial intelligence",
+          "Computer algorithms"
+        ]
+      },
+      {
+        "questionTitle": "What are some examples of behaviors exhibited by animals?",
+        "correct_answer": "Attack and escape behaviors, mating, feeding, and nest building behaviors",
+        "incorrect_answers": [
+          "Sleep and rest",
+          "Communication and social interaction",
+          "Eating and sleeping"
+        ]
+      },
+      {
+        "questionTitle": "What approach in robotics focuses on intelligence that is different from classical AI?",
+        "correct_answer": "Behavior-based approach",
+        "incorrect_answers": [
+          "Classical AI approach",
+          "Perception and modeling",
+          "Machine learning approach"
+        ]
+      },
+      {
+        "questionTitle": "What are the three laws of robotics behavior by Isaac Asimov?",
+        "correct_answer": "First Law: A robot may not injure a human being, Second Law: A robot must obey orders given by human beings, Third Law: A robot must protect its own existence if such protection does not conflict with the first or the second law",
+        "incorrect_answers": [
+          "First Law: A robot must protect its own existence, Second Law: A robot may not harm humans, Third Law: A robot must follow orders",
+          "First Law: A robot should prioritize its own safety, Second Law: A robot must protect humans, Third Law: A robot must follow orders",
+          "First Law: A robot should always follow orders, Second Law: A robot must obey humans, Third Law: A robot may not harm humans"
+        ]
+      },
+      {
+        "questionTitle": "What is the primary behavior of a Braitenberg Vehicle 1?",
+        "correct_answer": "Move in the direction it is pointing and vary its speed based on sensor data",
+        "incorrect_answers": [
+          "Remain stationary and ignore sensor data",
+          "Move away from sensor input",
+          "Move towards sensor input"
+        ]
+      },
+      {
+        "questionTitle": "What are the two types of Braitenberg Vehicles for Fear and Aggression?",
+        "correct_answer": "Type 1 - Fear: each sensor is connected to the motor on the same side; Type 2 – Aggression: each sensor is connected to the motor on the opposite side",
+        "incorrect_answers": [
+          "Type 1 - Fear: each sensor is connected to the motor on the opposite side; Type 2 – Aggression: each sensor is connected to the motor on the same side",
+          "Type 1 - Aggression: each sensor is connected to the motor on the same side; Type 2 – Fear: each sensor is connected to the motor on the opposite side",
+          "Type 1 - Neutral: sensors are not connected to any motors; Type 2 - Confusion: each sensor is connected to both motors"
+        ]
+      }
+    ]
+  },
+  {
+    "quizTitle": "Second Date Etiquette Quiz",
+    "questions": [
+      {
+        "questionTitle": "What's a good rule of thumb when choosing the location for a second date?",
+        "correct_answer": "A place that allows for conversation",
+        "incorrect_answers": [
+          "A loud nightclub",
+          "A movie theater",
+          "A fast-food restaurant"
+        ]
+      },
+      {
+        "questionTitle": "What's an appropriate topic of conversation on a second date?",
+        "correct_answer": "Hobbies and interests",
+        "incorrect_answers": ["Ex-partners", "Politics", "Debt and finances"]
+      },
+      {
+        "questionTitle": "How soon after the first date should you schedule a second date?",
+        "correct_answer": "Within a week",
+        "incorrect_answers": [
+          "Immediately after the first date",
+          "At least a month later",
+          "Whenever you feel like it"
+        ]
+      },
+      {
+        "questionTitle": "What is a good way to make a second date memorable?",
+        "correct_answer": "Plan a fun and unique activity",
+        "incorrect_answers": [
+          "Avoid all physical contact",
+          "Talk about work for the entire date",
+          "Keep the date as short as possible"
+        ]
+      },
+      {
+        "questionTitle": "When should you follow up with a thank-you message after a second date?",
+        "correct_answer": "The next day",
+        "incorrect_answers": [
+          "A week later",
+          "Never",
+          "Within a few hours after the date"
+        ]
+      },
+      {
+        "questionTitle": "What's a good way to show genuine interest during a second date?",
+        "correct_answer": "Ask open-ended questions",
+        "incorrect_answers": [
+          "Talk about yourself the whole time",
+          "Text on your phone frequently",
+          "Interrupt your date frequently"
+        ]
+      },
+      {
+        "questionTitle": "What's a red flag on a second date?",
+        "correct_answer": "Your date is constantly on their phone",
+        "incorrect_answers": [
+          "Your date talks too much about their ex",
+          "Your date suggests an expensive, extravagant date",
+          "Your date is dressed inappropriately"
+        ]
+      },
+      {
+        "questionTitle": "What should you do if you're not interested in a third date?",
+        "correct_answer": "Honesty is the best policy; kindly express your feelings",
+        "incorrect_answers": [
+          "Agree to a third date and then ghost them",
+          "Ghost them without saying anything",
+          "Make up an elaborate excuse"
+        ]
+      },
+      {
+        "questionTitle": "What's a good way to end a second date?",
+        "correct_answer": "Thank your date and express your interest in seeing them again",
+        "incorrect_answers": [
+          "Say you need to go to the bathroom and then leave",
+          "Just abruptly leave without saying anything",
+          "Don't say anything and walk away"
+        ]
+      },
+      {
+        "questionTitle": "How can you show that you're enjoying your second date?",
+        "correct_answer": "Smile and maintain eye contact",
+        "incorrect_answers": [
+          "Cross your arms and avoid eye contact",
+          "Complain about the food or service",
+          "Keep checking your watch"
+        ]
+      },
+      {
+        "questionTitle": "What's a good way to handle awkward silences on a second date?",
+        "correct_answer": "Ask your date about their favorite hobbies or travel experiences",
+        "incorrect_answers": [
+          "Stare at your plate and avoid eye contact",
+          "Start talking about your exes",
+          "Change the topic to something controversial"
+        ]
+      },
+      {
+        "questionTitle": "What's a good sign that your second date is going well?",
+        "correct_answer": "You both have meaningful, engaging conversations",
+        "incorrect_answers": [
+          "Your date seems disinterested and distracted",
+          "You both sit in silence the entire time",
+          "Your date talks only about themselves"
+        ]
+      },
+      {
+        "questionTitle": "How can you make your second date feel special?",
+        "correct_answer": "Compliment your date and show appreciation for their company",
+        "incorrect_answers": [
+          "Critique their outfit and appearance",
+          "Tell them they're not as fun as your ex",
+          "Ignore them and talk to other people"
+        ]
+      },
+      {
+        "questionTitle": "What's a good way to handle a disagreement or difference of opinion on a second date?",
+        "correct_answer": "Respectfully discuss your perspectives and try to find common ground",
+        "incorrect_answers": [
+          "Yell and get into a heated argument",
+          "Storm out of the date",
+          "Pretend to agree just to avoid conflict"
+        ]
+      },
+      {
+        "questionTitle": "What's a good approach if you want to see your date again after the second date?",
+        "correct_answer": "Express your interest in another date and suggest a specific plan",
+        "incorrect_answers": [
+          "Act disinterested and avoid contact",
+          "Play hard to get and make them chase you",
+          "Don't say anything and wait for them to initiate"
+        ]
+      },
+      {
+        "questionTitle": "How can you make a second date more enjoyable for both of you?",
+        "correct_answer": "Listen actively and show empathy towards your date's experiences",
+        "incorrect_answers": [
+          "Talk only about yourself and your achievements",
+          "Interrupt your date and dominate the conversation",
+          "Act bored and disinterested"
+        ]
+      },
+      {
+        "questionTitle": "What's a good sign that your date is also interested in a third date?",
+        "correct_answer": "They suggest future plans or activities together",
+        "incorrect_answers": [
+          "They make awkward excuses to leave",
+          "They seem indifferent and unengaged",
+          "They avoid making eye contact"
+        ]
+      },
+      {
+        "questionTitle": "How can you make your second date more memorable?",
+        "correct_answer": "Create a personalized and thoughtful experience based on your date's interests",
+        "incorrect_answers": [
+          "Take your date to a generic, crowded place",
+          "Keep the date short and rushed",
+          "Avoid any kind of planning and spontaneity"
+        ]
+      },
+      {
+        "questionTitle": "What's a good way to express your appreciation for a great second date?",
+        "correct_answer": "Send a sincere and thoughtful thank-you message",
+        "incorrect_answers": [
+          "Ignore your date and never contact them again",
+          "Send a generic and impersonal message",
+          "Wait for your date to initiate contact"
+        ]
+      }
+    ]
+  },
+  {
+    "quizTitle": "JavaFX Scene Builder and Application Development",
+    "questions": [
+      {
+        "questionTitle": "What is the primary purpose of Scene Builder in JavaFX application development?",
+        "correct_answer": "Designing user interfaces visually",
+        "incorrect_answers": [
+          "Compiling Java code",
+          "Running unit tests",
+          "Managing databases"
+        ]
+      },
+      {
+        "questionTitle": "Why is it recommended not to define nodes with an explicit size in JavaFX?",
+        "correct_answer": "To allow for flexibility when the window size changes",
+        "incorrect_answers": [
+          "To make the nodes appear larger on the screen",
+          "To reduce the memory consumption of the application",
+          "To ensure consistent node sizes across all devices"
+        ]
+      },
+      {
+        "questionTitle": "What property specifies a node's preferred width and height for layout purposes in JavaFX?",
+        "correct_answer": "preferred size properties",
+        "incorrect_answers": [
+          "maximum size properties",
+          "minimum size properties",
+          "size constraints properties"
+        ]
+      },
+      {
+        "questionTitle": "In a BorderPane layout, which areas can expand to fill empty space?",
+        "correct_answer": "Left, center, and right areas",
+        "incorrect_answers": [
+          "Top and bottom areas",
+          "Center area only",
+          "Left and right areas"
+        ]
+      },
+      {
+        "questionTitle": "What is the purpose of TitledPane in organizing radio buttons in a JavaFX application?",
+        "correct_answer": "To help the user understand the purpose of each RadioButton group",
+        "incorrect_answers": [
+          "To group radio buttons by color",
+          "To create a collapsible panel for images",
+          "To specify the position of radio buttons on the screen"
+        ]
+      },
+      {
+        "questionTitle": "How many RadioButton objects should be added to the ToggleGroup 'colorToggleGroup' in the example?",
+        "correct_answer": "4",
+        "incorrect_answers": ["2", "3", "5"]
+      },
+      {
+        "questionTitle": "Which method in the controller class is responsible for drawing a circle when the mouse is dragged?",
+        "correct_answer": "drawingAreaMouseDragged",
+        "incorrect_answers": [
+          "colorRadioButtonSelected",
+          "sizeRadioButtonSelected",
+          "undoButtonPressed"
+        ]
+      },
+      {
+        "questionTitle": "What does the 'undoButtonPressed' method do in the controller class?",
+        "correct_answer": "Removes the last circle drawn on the screen",
+        "incorrect_answers": [
+          "Clears the entire drawing",
+          "Changes the pen color",
+          "Closes the application"
+        ]
+      },
+      {
+        "questionTitle": "What JavaFX component is used for drawing on the screen in the example?",
+        "correct_answer": "Pane",
+        "incorrect_answers": ["VBox", "TitledPane", "BorderPane"]
+      },
+      {
+        "questionTitle": "In the controller class, what is the default pen size for drawing circles?",
+        "correct_answer": "MEDIUM",
+        "incorrect_answers": ["SMALL", "LARGE", "undefined"]
+      }
+    ]
+  },
+  {
+    "quizTitle": "Generics (Templates) in Application Program Development",
+    "questions": [
+      {
+        "questionTitle": "What is the primary purpose of Generics in programming?",
+        "correct_answer": "Generics adds stability to your code by detecting bugs at compile time.",
+        "incorrect_answers": [
+          "Generics is the capability to parameterize types.",
+          "Generics enable types to be parameterized when defining classes, interfaces, and methods.",
+          "Generics allow values to be passed as arguments in methods."
+        ]
+      },
+      {
+        "questionTitle": "What issue do Generics aim to solve?",
+        "correct_answer": "The need for explicit casting and runtime exceptions when working with different object types.",
+        "incorrect_answers": [
+          "Excessive memory consumption.",
+          "Complex code syntax.",
+          "Inefficient use of CPU resources."
+        ]
+      },
+      {
+        "questionTitle": "What does type erasure refer to in Generics?",
+        "correct_answer": "Type erasure is the process by which the compiler translates generic types into non-generic types (usually Object) and inserts necessary downcast operators.",
+        "incorrect_answers": [
+          "The removal of all types and objects in code during compilation.",
+          "The automatic deletion of unused code.",
+          "A method to eliminate redundant type parameters."
+        ]
+      },
+      {
+        "questionTitle": "Which of the following is an advantage of using Generics?",
+        "correct_answer": "Type safety at compile-time.",
+        "incorrect_answers": [
+          "Reduced memory consumption.",
+          "Easier runtime debugging.",
+          "Faster program execution."
+        ]
+      },
+      {
+        "questionTitle": "What naming conventions are commonly used for type parameters in Generics?",
+        "correct_answer": "Single, uppercase letters like E, K, V, T, S, U, and V.",
+        "incorrect_answers": [
+          "Long descriptive names to enhance readability.",
+          "Random characters to obfuscate the code.",
+          "Numbers like 1, 2, 3, and 4."
+        ]
+      },
+      {
+        "questionTitle": "What is a raw type in Generics?",
+        "correct_answer": "A generic class or interface without any type arguments.",
+        "incorrect_answers": [
+          "A type that contains unprocessed data.",
+          "A type that requires explicit casting for all operations.",
+          "A type with multiple type parameters."
+        ]
+      },
+      {
+        "questionTitle": "Which of the following statements about generic methods is true?",
+        "correct_answer": "Type parameters in a generic method are limited in scope to that specific method.",
+        "incorrect_answers": [
+          "Type parameters can only be used in non-static methods.",
+          "Type parameters are global and can be used across all methods in a class.",
+          "Type parameters are automatically inferred by the compiler."
+        ]
+      },
+      {
+        "questionTitle": "What is the primary benefit of using Generics for type safety?",
+        "correct_answer": "It allows the code to hold only a single type of object, preventing the storage of other objects.",
+        "incorrect_answers": [
+          "It improves program execution speed.",
+          "It eliminates the need for type casting at runtime.",
+          "It reduces code complexity."
+        ]
+      },
+      {
+        "questionTitle": "Which of the following cannot be used as a type argument in Generics?",
+        "correct_answer": "Primitive data types like 'int' or 'char'.",
+        "incorrect_answers": [
+          "String objects.",
+          "Custom class objects.",
+          "Array objects."
+        ]
+      },
+      {
+        "questionTitle": "What issue does Generics help eliminate when working with a list of different object types?",
+        "correct_answer": "The need for explicit casting and runtime errors.",
+        "incorrect_answers": [
+          "High memory consumption.",
+          "Complex code syntax.",
+          "Inefficient CPU usage."
+        ]
+      },
+      {
+        "questionTitle": "What is the primary purpose of using Generics in your code?",
+        "correct_answer": "To enhance type safety, eliminate casting, and improve code expressiveness.",
+        "incorrect_answers": [
+          "To make your code run faster.",
+          "To reduce memory consumption.",
+          "To simplify the code syntax."
+        ]
+      },
+      {
+        "questionTitle": "Which of the following represents a generic class?",
+        "correct_answer": "class Store<T> { ... }",
+        "incorrect_answers": [
+          "class Store { ... }",
+          "class Store<?> { ... }",
+          "class Store<int> { ... }"
+        ]
+      },
+      {
+        "questionTitle": "What is the primary benefit of Generics in terms of error detection?",
+        "correct_answer": "It allows the detection of type-related errors at compile time.",
+        "incorrect_answers": [
+          "It automatically fixes all runtime errors.",
+          "It eliminates the need for error handling.",
+          "It enhances program execution speed."
+        ]
+      },
+      {
+        "questionTitle": "What is the role of type parameters in a generic class or interface?",
+        "correct_answer": "They define the type of instance variables, method parameters, and return types.",
+        "incorrect_answers": [
+          "They define the class's name and package.",
+          "They specify the method's access modifiers.",
+          "They are used as comments for documentation."
+        ]
+      },
+      {
+        "questionTitle": "What is the significance of using the diamond notation in Generics (Java 7)?",
+        "correct_answer": "It allows you to invoke the generic type by replacing 'T' with specific values like String or List<Date>.",
+        "incorrect_answers": [
+          "It indicates that the type parameter is a wildcard.",
+          "It introduces an error in the code.",
+          "It is a deprecated notation."
+        ]
+      },
+      {
+        "questionTitle": "What is the primary advantage of using Generics to work with different data types?",
+        "correct_answer": "Type safety at compile-time, cleaner code, and expressive code.",
+        "incorrect_answers": [
+          "Faster program execution.",
+          "Reduced memory consumption.",
+          "Simplified error handling."
+        ]
+      },
+      {
+        "questionTitle": "What is the purpose of subtyping of generic types?",
+        "correct_answer": "To allow for more flexibility and compatibility when working with parameterized types.",
+        "incorrect_answers": [
+          "To limit the usage of generic types.",
+          "To make the code more complicated.",
+          "To enforce strict type checking."
+        ]
+      },
+      {
+        "questionTitle": "Which of the following is an example of a generic class with multiple type parameters?",
+        "correct_answer": "class ClassName<T1, T2, T3, ...> { ... }",
+        "incorrect_answers": [
+          "class Store<T> { ... }",
+          "class Store<> { ... }",
+          "class Store { ... }"
+        ]
+      },
+      {
+        "questionTitle": "What is the purpose of using Generics for type parameters?",
+        "correct_answer": "To create parameterized types and make the code more generalized and reusable.",
+        "incorrect_answers": [
+          "To add complexity to the code.",
+          "To simplify the code syntax.",
+          "To eliminate the need for comments."
+        ]
+      }
+    ]
+  },
+  {
+    "quizTitle": "JavaFX Properties and Binding Quiz",
+    "questions": [
+      {
+        "questionTitle": "What are JavaFX properties?",
+        "correct_answer": "Wrapper objects for JavaFX-based object attributes",
+        "incorrect_answers": [
+          "Data types in JavaFX",
+          "JavaFX user interface elements",
+          "JavaFX layout management"
+        ]
+      },
+      {
+        "questionTitle": "What is the purpose of JavaFX binding?",
+        "correct_answer": "To synchronize values between properties based on changes",
+        "incorrect_answers": [
+          "To create user interfaces",
+          "To define layout structures",
+          "To manage database connections"
+        ]
+      },
+      {
+        "questionTitle": "How many types of Property objects are there in JavaFX?",
+        "correct_answer": "30",
+        "incorrect_answers": ["10", "20", "40"]
+      },
+      {
+        "questionTitle": "Which interfaces do most JavaFX Property objects extend?",
+        "correct_answer": "ReadOnlyProperty<T> and WritableValue<T>",
+        "incorrect_answers": [
+          "Observer and Observable",
+          "Bindable and Bindable",
+          "Changeable and ChangeableValue"
+        ]
+      },
+      {
+        "questionTitle": "What is the purpose of Invalidation Listeners in JavaFX?",
+        "correct_answer": "To mark a property as potentially changed without forcing it to recalculate the value",
+        "incorrect_answers": [
+          "To immediately recalculate the property's value",
+          "To check if a property is writable",
+          "To manage database connections"
+        ]
+      },
+      {
+        "questionTitle": "How can you create a one-directional binding in JavaFX?",
+        "correct_answer": "Using the bind() method",
+        "incorrect_answers": [
+          "Using the Low-Level API",
+          "Using the Bindings API",
+          "Using a custom Binding object"
+        ]
+      },
+      {
+        "questionTitle": "What is the primary benefit of creating a custom Binding object in JavaFX?",
+        "correct_answer": "Performance optimization and custom calculations",
+        "incorrect_answers": [
+          "Simplicity and ease of use",
+          "Built-in compatibility with all properties",
+          "Automatic synchronization with the UI"
+        ]
+      }
+    ]
+  },
+  {
+    "quizTitle": "Java Lambda and Streams Quiz",
+    "questions": [
+      {
+        "questionTitle": "What is the primary goal of Java 8 lambdas?",
+        "correct_answer": "To express functional programming concepts",
+        "incorrect_answers": [
+          "To create anonymous functions",
+          "To replace traditional methods",
+          "To enhance the performance of single-threaded applications"
+        ]
+      },
+      {
+        "questionTitle": "What is the main advantage of using lambda expressions in Java?",
+        "correct_answer": "Concise and easy-to-read code",
+        "incorrect_answers": [
+          "Faster execution of code",
+          "Improved error handling",
+          "Enhanced support for legacy systems"
+        ]
+      },
+      {
+        "questionTitle": "In functional-style programming, how are code and data treated?",
+        "correct_answer": "Thinking about your problem domain in terms of immutable values and functions",
+        "incorrect_answers": [
+          "Mutable data and procedural code",
+          "Data-driven approach",
+          "Imperative data manipulation"
+        ]
+      },
+      {
+        "questionTitle": "What do lambda expressions allow you to create in Java 8?",
+        "correct_answer": "Anonymous functions as first-class citizens",
+        "incorrect_answers": [
+          "Traditional methods",
+          "Class-based objects",
+          "Abstract data types"
+        ]
+      },
+      {
+        "questionTitle": "What is the purpose of the @FunctionalInterface annotation?",
+        "correct_answer": "To indicate that an interface has a single abstract method and can be used with lambda expressions",
+        "incorrect_answers": [
+          "To define a functional interface",
+          "To mark an interface as deprecated",
+          "To declare an interface as public"
+        ]
+      },
+      {
+        "questionTitle": "What is a functional interface in Java?",
+        "correct_answer": "An interface with a single abstract method used with lambda expressions",
+        "incorrect_answers": [
+          "An interface with multiple abstract methods",
+          "An interface with no abstract methods",
+          "An interface with only static methods"
+        ]
+      },
+      {
+        "questionTitle": "What is the purpose of the filter operation in a Stream?",
+        "correct_answer": "To select elements based on a specified condition",
+        "incorrect_answers": [
+          "To sort elements in ascending order",
+          "To map elements to a different type",
+          "To compute the sum of elements"
+        ]
+      },
+      {
+        "questionTitle": "What is an intermediate operation in a Stream?",
+        "correct_answer": "An operation that returns another Stream",
+        "incorrect_answers": [
+          "An operation that produces a final result",
+          "An operation that processes each element in the stream",
+          "An operation that is eager in processing"
+        ]
+      },
+      {
+        "questionTitle": "What is the primary characteristic of a Stream pipeline?",
+        "correct_answer": "Pipelining - Many stream operations return another stream",
+        "incorrect_answers": [
+          "Internal iteration - Streams are explicitly iterated using an iterator",
+          "Parallel processing - Streams always execute operations concurrently",
+          "Single iteration - A stream can be traversed multiple times"
+        ]
+      },
+      {
+        "questionTitle": "What happens when you try to iterate a Stream more than once?",
+        "correct_answer": "An exception is thrown because a Stream can only be traversed once",
+        "incorrect_answers": [
+          "The Stream resets to its initial state",
+          "The Stream silently skips the second iteration",
+          "The Stream provides a warning but allows multiple iterations"
+        ]
+      },
+      {
+        "questionTitle": "Which terminal operation produces a result from a Stream?",
+        "correct_answer": "Collect",
+        "incorrect_answers": ["Map", "Filter", "ForEach"]
+      },
+      {
+        "questionTitle": "What does the map operation do in a Stream?",
+        "correct_answer": "Converts each element to another type and returns a new Stream",
+        "incorrect_answers": [
+          "Selects elements based on a specified condition",
+          "Sorts elements in ascending order",
+          "Reduces elements to a single result"
+        ]
+      },
+      {
+        "questionTitle": "What is the primary purpose of Java lambda expressions?",
+        "correct_answer": "To create anonymous functions",
+        "incorrect_answers": [
+          "To replace traditional methods",
+          "To enhance code performance",
+          "To simplify debugging"
+        ]
+      },
+      {
+        "questionTitle": "In functional programming, what is the advantage of lazy evaluation?",
+        "correct_answer": "It avoids unnecessary calculations and can increase performance",
+        "incorrect_answers": [
+          "It processes elements immediately",
+          "It increases memory usage",
+          "It simplifies code"
+        ]
+      },
+      {
+        "questionTitle": "What is a functional-style data processing operation in Java?",
+        "correct_answer": "An operation that processes elements using functional programming techniques",
+        "incorrect_answers": [
+          "An operation that relies on external libraries",
+          "An operation that performs eager evaluation",
+          "An operation that uses mutable variables"
+        ]
+      },
+      {
+        "questionTitle": "What does the @FunctionalInterface annotation indicate?",
+        "correct_answer": "An interface that has a single abstract method and can be used with lambda expressions",
+        "incorrect_answers": [
+          "An interface with multiple abstract methods",
+          "An interface with no methods",
+          "An interface that is only used internally"
+        ]
+      },
+      {
+        "questionTitle": "What is the primary goal of Java 8 lambdas?",
+        "correct_answer": "To express functional programming concepts",
+        "incorrect_answers": [
+          "To create anonymous functions",
+          "To replace traditional methods",
+          "To enhance the performance of single-threaded applications"
+        ]
+      },
+      {
+        "questionTitle": "What is the main advantage of using lambda expressions in Java?",
+        "correct_answer": "Concise and easy-to-read code",
+        "incorrect_answers": [
+          "Faster execution of code",
+          "Improved error handling",
+          "Enhanced support for legacy systems"
+        ]
+      },
+      {
+        "questionTitle": "In functional-style programming, how are code and data treated?",
+        "correct_answer": "Thinking about your problem domain in terms of immutable values and functions",
+        "incorrect_answers": [
+          "Mutable data and procedural code",
+          "Data-driven approach",
+          "Imperative data manipulation"
+        ]
+      },
+      {
+        "questionTitle": "What do lambda expressions allow you to create in Java 8?",
+        "correct_answer": "Anonymous functions as first-class citizens",
+        "incorrect_answers": [
+          "Traditional methods",
+          "Class-based objects",
+          "Abstract data types"
+        ]
+      }
+    ]
+  },
+  {
+    "quizTitle": "Application Program Development - Crafting Your Own Dialog Boxes",
+    "questions": [
+      {
+        "questionTitle": "What is the purpose of dialog boxes in application development?",
+        "correct_answer": "To interact with users and modify the application model",
+        "incorrect_answers": [
+          "To display information about the application",
+          "To control the application's appearance",
+          "To create graphical elements in the application"
+        ]
+      },
+      {
+        "questionTitle": "How are dialog boxes related to the main application window?",
+        "correct_answer": "They interact with the main application's model and can modify it.",
+        "incorrect_answers": [
+          "They have no relationship with the main window.",
+          "They are independent windows unrelated to the application.",
+          "They can only be minimized when the main window is minimized."
+        ]
+      },
+      {
+        "questionTitle": "What is a common way to communicate with a dialog box?",
+        "correct_answer": "Passing model-specific information to it from the owner window",
+        "incorrect_answers": [
+          "Directly manipulating the dialog box's components",
+          "Using a separate communication channel",
+          "Creating a new model for each dialog box"
+        ]
+      },
+      {
+        "questionTitle": "How can you ensure the OK button is clicked in a dialog box?",
+        "correct_answer": "Define a function using setResultConverter that returns a result when OK is clicked",
+        "incorrect_answers": [
+          "Listen for the OK button click event",
+          "Use a separate callback function for OK button clicks",
+          "Check the result after the dialog box is closed"
+        ]
+      },
+      {
+        "questionTitle": "What class can be used to create dialog boxes in JavaFX?",
+        "correct_answer": "Dialog",
+        "incorrect_answers": ["Window", "Pane", "Button"]
+      },
+      {
+        "questionTitle": "What parameters are commonly used for dialog box constructors?",
+        "correct_answer": "Stage owner and title for the dialog box",
+        "incorrect_answers": [
+          "Size and position",
+          "Model object and title",
+          "Button type and title"
+        ]
+      },
+      {
+        "questionTitle": "What is the purpose of the EmailBuddy class?",
+        "correct_answer": "To represent buddies with name, address, and hot list status",
+        "incorrect_answers": [
+          "To send emails to buddies",
+          "To store email addresses only",
+          "To categorize buddies into groups"
+        ]
+      },
+      {
+        "questionTitle": "What is the primary function of the EmailBuddyList class?",
+        "correct_answer": "To manage a list of EmailBuddy objects",
+        "incorrect_answers": [
+          "To send email messages",
+          "To categorize buddies into groups",
+          "To store email addresses only"
+        ]
+      },
+      {
+        "questionTitle": "How can you remove an EmailBuddy from an EmailBuddyList?",
+        "correct_answer": "Call the remove method with the buddy's index as the parameter",
+        "incorrect_answers": [
+          "Set the buddy's status to 'deleted'",
+          "Clear the buddy's data",
+          "Create a new list without the buddy"
+        ]
+      },
+      {
+        "questionTitle": "What does the setResultConverter function in a dialog box do?",
+        "correct_answer": "Defines what is returned from the dialog box when it is closed",
+        "incorrect_answers": [
+          "Sets the title of the dialog box",
+          "Handles button click events",
+          "Creates a new dialog box instance"
+        ]
+      },
+      {
+        "questionTitle": "How can you enable the OK button in a dialog box?",
+        "correct_answer": "When both name and address fields are not empty, the OK button is enabled.",
+        "incorrect_answers": [
+          "By default, the OK button is always enabled.",
+          "Enabling it by setting a flag.",
+          "Enabling it by listening for TextFields' change events."
+        ]
+      },
+      {
+        "questionTitle": "What event is used to trigger editing of an EmailBuddy?",
+        "correct_answer": "Double-clicking on the list",
+        "incorrect_answers": [
+          "Single-clicking on the list",
+          "Pressing the Edit button",
+          "Right-clicking on the list"
+        ]
+      },
+      {
+        "questionTitle": "What happens when the user selects a buddy to edit?",
+        "correct_answer": "A dialog box with buddy details is opened for editing.",
+        "incorrect_answers": [
+          "The buddy is automatically edited in the list.",
+          "The buddy is removed from the list.",
+          "The application closes."
+        ]
+      },
+      {
+        "questionTitle": "What is the primary role of the EmailBuddyPanel class?",
+        "correct_answer": "To display the view of the application and handle user interactions.",
+        "incorrect_answers": [
+          "To create email messages.",
+          "To manage the email buddy list.",
+          "To send email messages."
+        ]
+      },
+      {
+        "questionTitle": "How can you enable the Remove button in the EmailBuddyPanel?",
+        "correct_answer": "By selecting an item in the list.",
+        "incorrect_answers": [
+          "By clicking the Remove button.",
+          "By right-clicking on an item.",
+          "By hovering over the list."
+        ]
+      },
+      {
+        "questionTitle": "What is the purpose of the BuddyDetailsDialog class?",
+        "correct_answer": "To create a dialog box for adding or editing email buddies.",
+        "incorrect_answers": [
+          "To display a list of email buddies.",
+          "To categorize email buddies.",
+          "To send email messages."
+        ]
+      },
+      {
+        "questionTitle": "What is passed to the BuddyDetailsDialog when editing a buddy?",
+        "correct_answer": "The selected EmailBuddy to be edited.",
+        "incorrect_answers": [
+          "A new EmailBuddy instance.",
+          "The buddy's name and address.",
+          "An index to locate the buddy."
+        ]
+      },
+      {
+        "questionTitle": "What does the setResultConverter function in BuddyDetailsDialog do?",
+        "correct_answer": "Defines what is to be returned when OK is clicked in the dialog box.",
+        "incorrect_answers": [
+          "Handles the OK button click event.",
+          "Closes the dialog box.",
+          "Enables the OK button."
+        ]
+      },
+      {
+        "questionTitle": "What needs to be done to enable the OK button in BuddyDetailsDialog?",
+        "correct_answer": "Both name and address fields must be filled in.",
+        "incorrect_answers": [
+          "Click the OK button.",
+          "Select a buddy from the list.",
+          "Toggle the Hot List checkbox."
+        ]
+      }
+    ]
+  },
+  {
+    "quizTitle": "Standard Dialog Boxes in JavaFX",
+    "questions": [
+      {
+        "questionTitle": "What is a Dialog Box in JavaFX used for?",
+        "correct_answer": "Interacting with the user, displaying or obtaining additional information",
+        "incorrect_answers": [
+          "Displaying components on the main application window",
+          "Running background tasks in JavaFX",
+          "Creating complex user interfaces"
+        ]
+      },
+      {
+        "questionTitle": "Which class is used to represent a standard dialog box in JavaFX?",
+        "correct_answer": "Alert",
+        "incorrect_answers": ["DialogBox", "MessageBox", "InfoWindow"]
+      },
+      {
+        "questionTitle": "How do you show a standard dialog box in JavaFX?",
+        "correct_answer": "alert.showAndWait()",
+        "incorrect_answers": [
+          "dialog.display()",
+          "popup.show()",
+          "showDialogBox(alert)"
+        ]
+      },
+      {
+        "questionTitle": "What type of text can be added to an Alert dialog box with a TextArea?",
+        "correct_answer": "Additional information with a lot of text",
+        "incorrect_answers": ["Short messages only", "Code snippets", "Images"]
+      },
+      {
+        "questionTitle": "What is the purpose of the setExpandableContent() method in an Alert dialog?",
+        "correct_answer": "To add extra detail that the user can hide or show",
+        "incorrect_answers": [
+          "To remove the dialog header",
+          "To change the dialog's icon",
+          "To add more buttons"
+        ]
+      },
+      {
+        "questionTitle": "How do you handle the result of a confirmation dialog in JavaFX?",
+        "correct_answer": "Use the get() method on the result object to determine which button was pressed.",
+        "incorrect_answers": [
+          "Use a switch statement to check the button type",
+          "Handle it directly in the dialog's event handler",
+          "Use the result.getStatus() method"
+        ]
+      },
+      {
+        "questionTitle": "What class is used to create a dialog box with custom button choices?",
+        "correct_answer": "ButtonType",
+        "incorrect_answers": ["AlertDialog", "CustomDialog", "ChoiceDialog"]
+      },
+      {
+        "questionTitle": "What can you do with a ChoiceDialog in JavaFX?",
+        "correct_answer": "Allow the user to select an option from a list of choices",
+        "incorrect_answers": [
+          "Display a password field",
+          "Show a text field for user input",
+          "Play a video"
+        ]
+      },
+      {
+        "questionTitle": "Which dialog box is used for allowing the user to enter text in a text field?",
+        "correct_answer": "TextInputDialog",
+        "incorrect_answers": ["ChoiceDialog", "Alert", "CustomDialog"]
+      },
+      {
+        "questionTitle": "How can you customize the buttons on a confirmation dialog box in JavaFX?",
+        "correct_answer": "Replace the default buttons with your own choices using ButtonType",
+        "incorrect_answers": [
+          "Change the button text using setButtonText()",
+          "Add new buttons using addButton()",
+          "Use CSS to style the buttons"
+        ]
+      },
+      {
+        "questionTitle": "What is a PasswordField in JavaFX used for?",
+        "correct_answer": "Hiding characters entered by the user for privacy",
+        "incorrect_answers": [
+          "Displaying passwords in plain text",
+          "Encrypting user input",
+          "Generating secure passwords"
+        ]
+      },
+      {
+        "questionTitle": "What class is used to create a dialog with a username and password field?",
+        "correct_answer": "Dialog",
+        "incorrect_answers": [
+          "UsernamePasswordDialog",
+          "LoginDialog",
+          "CredentialDialog"
+        ]
+      },
+      {
+        "questionTitle": "How can you get the username and password values from a Dialog with username and password fields?",
+        "correct_answer": "Define a Callback and use setResultConverter() to return the values",
+        "incorrect_answers": [
+          "Access the fields directly with dialog.getUsername() and dialog.getPassword()",
+          "Use the result.get() method",
+          "Call dialog.getResult() and parse the result as a Pair"
+        ]
+      },
+      {
+        "questionTitle": "What method allows you to set the initial directory for a FileChooser dialog?",
+        "correct_answer": "setInitialDirectory(File directory)",
+        "incorrect_answers": [
+          "setDefaultDirectory(File directory)",
+          "openInDirectory(File directory)",
+          "chooseDirectory(File directory)"
+        ]
+      },
+      {
+        "questionTitle": "What is the purpose of FileChooser.ExtensionFilter in JavaFX?",
+        "correct_answer": "To specify which types of files are shown in the dialog",
+        "incorrect_answers": [
+          "To filter file names based on a keyword",
+          "To sort files in alphabetical order",
+          "To display file details and metadata"
+        ]
+      },
+      {
+        "questionTitle": "What method is used to display the FileChooser dialog for opening a file in JavaFX?",
+        "correct_answer": "showOpenDialog(primaryStage)",
+        "incorrect_answers": [
+          "displayOpenDialog(primaryStage)",
+          "openFile(primaryStage)",
+          "openFileDialog(primaryStage)"
+        ]
+      },
+      {
+        "questionTitle": "How do you set the default value for a ChoiceDialog in JavaFX?",
+        "correct_answer": "Specify the default value in the ChoiceDialog constructor",
+        "incorrect_answers": [
+          "Call setDefaultValue(String defaultValue)",
+          "Use a separate setDefault() method",
+          "Call setInitialValue(String initialValue)"
+        ]
+      },
+      {
+        "questionTitle": "What is the primary use of a FileChooser dialog in JavaFX?",
+        "correct_answer": "Selecting files for opening or saving",
+        "incorrect_answers": [
+          "Displaying image thumbnails",
+          "Creating and editing text files",
+          "Managing user credentials"
+        ]
+      },
+      {
+        "questionTitle": "How can you disable the LOGIN button in a username and password dialog until the user enters something?",
+        "correct_answer": "Use setDisable(true) on the button and listen for text changes in the username field",
+        "incorrect_answers": [
+          "Use setEnabled(false) on the button",
+          "Call setButtonState(ButtonState.DISABLED) on the button",
+          "Set a flag variable when the button is disabled"
+        ]
+      }
+    ]
+  },
+
+  {
+    "quizTitle": "JavaFX Menu Development Quiz",
+    "questions": [
+      {
+        "questionTitle": "What is a menu in JavaFX?",
+        "correct_answer": "A list of commands presented to the user at their request.",
+        "incorrect_answers": [
+          "A button with special features.",
+          "A pop-up window for text input.",
+          "A submenu within a larger menu."
+        ]
+      },
+      {
+        "questionTitle": "How are menus added to a JavaFX application?",
+        "correct_answer": "By attaching them to a menu bar or using pop-up menus.",
+        "incorrect_answers": [
+          "By creating separate windows for each menu.",
+          "By embedding them in the application's code.",
+          "By using external libraries not included in JavaFX."
+        ]
+      },
+      {
+        "questionTitle": "Which class is used to create a menu bar in JavaFX?",
+        "correct_answer": "MenuBar",
+        "incorrect_answers": ["MenuContainer", "MenuPanel", "MenuBarController"]
+      },
+      {
+        "questionTitle": "What is the purpose of a SeparatorMenuItem in a menu?",
+        "correct_answer": "To separate different items within a menu.",
+        "incorrect_answers": [
+          "To create a submenu.",
+          "To disable a menu item.",
+          "To add a radio button option."
+        ]
+      },
+      {
+        "questionTitle": "How can key accelerators be added to menu items?",
+        "correct_answer": "By using KeyCombination.keyCombination() with a specific key combination.",
+        "incorrect_answers": [
+          "By attaching an event handler to the menu item.",
+          "By defining them in a separate configuration file.",
+          "By using a special menu item type."
+        ]
+      },
+      {
+        "questionTitle": "What is the purpose of a ToggleGroup in JavaFX menus?",
+        "correct_answer": "To ensure that only one radio menu item can be selected at a time.",
+        "incorrect_answers": [
+          "To group menu items under a single parent.",
+          "To toggle the visibility of menu items.",
+          "To create submenus within a menu."
+        ]
+      },
+      {
+        "questionTitle": "How can a cascaded menu be created in JavaFX?",
+        "correct_answer": "By adding a menu to another menu as if it were a menu item.",
+        "incorrect_answers": [
+          "By creating a new menu bar for the cascaded menu.",
+          "By using external libraries for cascaded menus.",
+          "By using special menu container classes."
+        ]
+      },
+      {
+        "questionTitle": "What is the purpose of a ContextMenu in JavaFX?",
+        "correct_answer": "To provide a menu that pops up wherever the user right-clicks on the pane.",
+        "incorrect_answers": [
+          "To create a submenu within the application.",
+          "To display a menu at the top of the application window.",
+          "To group menu items in a vertical layout."
+        ]
+      },
+      {
+        "questionTitle": "How is a ContextMenu displayed in JavaFX?",
+        "correct_answer": "By using the show() method with the Pane as the target and specifying its location.",
+        "incorrect_answers": [
+          "By attaching it to the application's main menu.",
+          "By using the display() method with x and y coordinates.",
+          "By embedding it in the application's code."
+        ]
+      },
+      {
+        "questionTitle": "How can event handlers be added to menu items in JavaFX?",
+        "correct_answer": "By adding the event handler to the MenuItem.",
+        "incorrect_answers": [
+          "By embedding the event handler in the menu bar.",
+          "By creating a separate event handling class.",
+          "By using the show() method with the Pane."
+        ]
+      },
+      {
+        "questionTitle": "How can you determine if a CheckMenuItem has been checked or unchecked?",
+        "correct_answer": "By using the isSelected() method of the CheckMenuItem.",
+        "incorrect_answers": [
+          "By checking the value of a Boolean variable.",
+          "By listening for mouse events on the menu item.",
+          "By using the isSelected property of the MenuItem class."
+        ]
+      },
+      {
+        "questionTitle": "How can menu items be disabled or enabled in JavaFX?",
+        "correct_answer": "By setting the 'setDisable' property of the MenuItem.",
+        "incorrect_answers": [
+          "By removing the menu item from the menu.",
+          "By using the enable() and disable() methods.",
+          "By adding or removing event handlers."
+        ]
+      }
+    ]
+  },
+  {
+    "quizTitle": "JavaFX Layouts and Automatic Resizing Quiz",
+    "questions": [
+      {
+        "questionTitle": "What is the primary purpose of using a layout pane in JavaFX?",
+        "correct_answer": "our components will resize automatically when the window is resized",
+        "incorrect_answers": [
+          "we would not have to compute locations and sizes for our components",
+          "our interface will appear 'nicely' on all platforms",
+          "To add background images to the application"
+        ]
+      },
+      {
+        "questionTitle": "Which layout pane is commonly used to arrange components horizontally from left to right, with components flowing to the next 'line' when there's no space left on the current line?",
+        "correct_answer": "FlowPane",
+        "incorrect_answers": ["BorderPane", "HBox", "GridPane"]
+      },
+      {
+        "questionTitle": "What property is used to specify the vertical gap between rows of components in a FlowPane?",
+        "correct_answer": "setVgap()",
+        "incorrect_answers": ["setHgap()", "setPadding()", "setSpacing()"]
+      },
+      {
+        "questionTitle": "Which layout pane is suitable for arranging components at one of five anchored positions (top, left, bottom, right, or center) and allows them to grow accordingly?",
+        "correct_answer": "BorderPane",
+        "incorrect_answers": ["FlowPane", "HBox", "GridPane"]
+      },
+      {
+        "questionTitle": "Which layout pane is excellent for arranging a 2-dimensional grid of components and aligns the components neatly into rows and columns?",
+        "correct_answer": "GridPane",
+        "incorrect_answers": ["FlowPane", "HBox", "BorderPane"]
+      },
+      {
+        "questionTitle": "How can you make a component take up all the available extra space when the window is resized in a GridPane?",
+        "correct_answer": "Set preferred width and height to Integer.MAX_VALUE",
+        "incorrect_answers": [
+          "Set minimum width and height to zero",
+          "Set padding with Insets(0)",
+          "Use setVgap() and setHgap() methods"
+        ]
+      }
+    ]
+  }
+]

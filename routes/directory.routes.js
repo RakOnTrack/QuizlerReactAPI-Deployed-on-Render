@@ -18,7 +18,7 @@ router.get("/", directories.redirectToRoot);
 router.get("/:id", directories.readDirectory);
 
 // Moving a directory
-router.put("/move", directories.moveDirectory);
+router.put("/moveDir", directories.moveDirectory);
 
 // Route for renaming a directory
 router.put("/rename", directories.renameDirectory);
@@ -31,6 +31,6 @@ router.delete("/", directories.deleteDirectory);
 
 // Route for moving a quiz between directories
 // chloe: changed the route call since its more related to directories
-router.put("/move", directories.moveQuiz);
+router.put("/moveQuiz", directories.moveQuiz);
 
 module.exports = router;
