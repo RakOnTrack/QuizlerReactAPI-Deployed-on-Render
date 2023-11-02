@@ -246,7 +246,7 @@ exports.moveDirectory = async (req, res) => {
       }
     }
     // chloe: should this be an empty return?
-    res.status(200);
+    res.status(200).json({ newParentId });
   } catch (error) {
     res.status(401).json({ error: error });
   }

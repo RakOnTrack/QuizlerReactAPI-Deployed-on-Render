@@ -110,16 +110,37 @@ exports.addQuizWithAI = async function (req) {
       }
 
       // Use 'await' here to asynchronously wait for the completion
-      const completion = await openai.completions.create({
-        model: "text-davinci-003",
-        prompt: generatePrompt(quizTopic, questionCount),
+      // const completion = await openai.completions.create({
+      //   model: "text-davinci-003",
+      //   prompt: generatePrompt(quizTopic, questionCount),
+      //   temperature: 0.0,
+      //   max_tokens: 800,
+      // });
+
+      const messages = [
+        {
+          role: "system",
+          content:
+            "You need to create a multiple-choice quiz based on the content provided and format it in JSON with one correct answer and a maximum of three incorrect answers for each question.",
+        },
+        {
+          role: "user",
+          content: generatePrompt(quizTopic, questionCount),
+        },
+        // { role: "assistant", content: firstResponse },
+        // { role: "user", content: sndPrompt },
+      ];
+
+      const completion = await openai.chat.completions.create({
+        model: "ft:gpt-3.5-turbo-0613:personal::8GHsfxGO",
+        messages: messages,
         temperature: 0.0,
         max_tokens: 800,
       });
 
-      const completionText = completion.choices[0].text;
+      const completionText = completion.choices[0].message.content;
       const formattedResponse = JSON.parse(completionText); // Parse the JSON string
-      formattedResponse.parentDirectory = directoryId; // Parse the JSON string
+      formattedResponse.parentDirectory = directoryId || process.env.DEFAULT_ROOT_DIRECTORY; // set parentDirectory ()
 
       // Assuming 'addQuiz' is an asynchronous function that returns a promise
       const data = await addQuiz(formattedResponse);
@@ -136,7 +157,7 @@ exports.addQuizWithAI = async function (req) {
 };
 
 //FIXME: Add details for function
-function generatePrompt(studyContent, questionCount) {
+function generatePrompt(studyContent, questionCount = 5) {
   return `
   Make me a multiple-choice quiz with ${questionCount} questions about this content:
   

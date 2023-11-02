@@ -4,7 +4,7 @@ const quizService = require("../controllers/quiz.controller.js");
 
 // Add quiz
 router.post("/", quizService.addQuiz);
-router.post("/:DirId", quizService.addQuizToDir);
+router.post("/dir/:DirId", quizService.addQuizToDir);
 
 // FIXME: Add a quiz using openai api to generate it
 const multer = require("multer");

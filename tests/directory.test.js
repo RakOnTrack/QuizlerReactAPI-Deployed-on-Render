@@ -116,7 +116,7 @@ describe("Directory API Tests", () => {
     });
   });
 
-  describe("PUT /api/directory/move", () => {
+  describe("PUT /api/directory/moveDir", () => {
     it("should move a directory to a new parent directory", async () => {
       let parentDirectory1 = await createTestDirectory(
         app,
@@ -143,14 +143,29 @@ describe("Directory API Tests", () => {
       );
 
       //// Moves directoryToMove from parent1 to parent2:
-      await request(app).put("/api/directory/move").send({
+      await request(app).put("/api/directory/moveDir").send({
         directoryId: directoryToMove.directory._id,
         newParentId: parentDirectory2.directory._id,
       });
 
-      parentDirectory1 = await getDirectoryById(app, parentDirectory1.body._id);
-      // parentDirectory2 = await getDirectoryById(app, parentDirectory2.body._id);
-      // directoryToMove = await getDirectoryById(app, directoryToMove.body._id);
+      parentDirectory1 = await getDirectoryById(
+        app,
+        parentDirectory1.directory._id
+      );
+      parentDirectory2 = await getDirectoryById(
+        app,
+        parentDirectory2.directory._id
+      );
+      directoryToMove = await getDirectoryById(
+        app,
+        directoryToMove.directory._id
+      );
+
+      expect(parentDirectory1.subdirectories.length).toBe(0);
+      expect(parentDirectory2.subdirectories.length).toBe(1);
+      expect(directoryToMove.parentDirectory).toBe(
+        parentDirectory2.directory._id
+      );
     });
   });
 

@@ -5,7 +5,7 @@
   "main": "server.js",
   "scripts": {
     "test": "cross-env NODE_ENV=test jest --forceExit --runInBand --detectOpenHandles --verbose",
-    "start": "node gpt3encoder.js",
+    "start": "node server.js",
     "coverage": "jest -c jest.config.js --runInBand --coverage",
     "dev": "nodemon server.js"
   },
