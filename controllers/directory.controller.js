@@ -347,7 +347,7 @@ exports.switchOrder = async (req, res) => {
 };
 
 // Recursively deleting a directory and its items
-exports.deleteDirectory = async (req, res) => {
+exports.deleteDirectory = async (req, res, flag = true) => {
   let directoryId = req.body.directoryId;
 
   try {
@@ -374,16 +374,24 @@ exports.deleteDirectory = async (req, res) => {
     // Recursively delete subdirectories and their items
     // FIXME: this might not be ideal and can break
     for (const subdirectory of subdirectories) {
-      await exports.deleteDirectory(subdirectory._id);
+      const data = {
+        body: {
+          directoryId: subdirectory._id.toString(),
+        },
+      };
+      await exports.deleteDirectory(data, res, false);
     }
 
     // Finally, delete the directory itself
     await Directory.findByIdAndDelete(directoryId);
 
-    res
-      .status(200)
-      .json({ message: "Directory and its items deleted successfully" });
+    if (flag) {
+      res
+        .status(200)
+        .json({ message: "Directory and its items deleted successfully" });
+    }
   } catch (error) {
+    console.log(error);
     res.status(401).json({ error: error });
   }
 };

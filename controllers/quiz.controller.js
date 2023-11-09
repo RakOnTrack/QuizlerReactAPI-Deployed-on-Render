@@ -27,49 +27,48 @@ exports.addQuiz = async (req, res) => {
     const { quizTitle, questions, directoryId } = req.body;
 
     if (!quizTitle || !questions) {
-      res.status(401).json({ error: `Content is empty:` });
+      res.status(401).json({ error: "Content is empty" });
       return;
     }
 
-    // Insert all the questions into database
+    // Insert all the questions into the database
     const insertedQuestions = await Question.insertMany(questions);
 
     const questionIds = insertedQuestions.map((question) => question._id || "");
 
-    // FIXME: can directory be null?
+    // Determine the directory to use
     let directoryToUse = directoryId || process.env.DEFAULT_ROOT_DIRECTORY;
 
-    // Initiate new quiz object with data input
+    // Create a new quiz object with input data
     const newestQuiz = new Quiz({
       quizTitle,
       questions: questionIds,
       parentDirectory: directoryToUse,
     });
 
-    // Save quiz into database
+    // Save the quiz into the database
     const savedQuiz = await newestQuiz.save();
 
-    // Add Quiz to a Directory
+    
+    // Add the quiz to a directory by updating the directory's 'quizzes' array
     await Directory.findByIdAndUpdate(savedQuiz.parentDirectory, {
       $push: { quizzes: savedQuiz._id },
     });
 
-    // gets Quiz Id and returns that
-    await getQuiz(savedQuiz._id).then((data) => {
-      res.status(200).json(data);
-    });
+    // Get the Quiz ID and return it in the response
+    const quizData = await getQuiz(savedQuiz._id.toString());
+    res.status(200).json(quizData);
   } catch (err) {
     if (err.code === 11000) {
-      res.status(11000).json({ error: "Quiz Title already taken" });
-      return;
+      res.status(400).json({ error: "Quiz Title already taken" });
     } else {
-      res.status(404).json({
+      res.status(500).json({
         error: "There was an error creating the quiz: " + err.message,
       });
-      return;
     }
   }
 };
+
 
 // add a new quiz and add it to a directory
 exports.addQuizToDir = async (req, res) => {
@@ -140,7 +139,8 @@ exports.addQuizWithAI = async function (req) {
 
       const completionText = completion.choices[0].message.content;
       const formattedResponse = JSON.parse(completionText); // Parse the JSON string
-      formattedResponse.parentDirectory = directoryId || process.env.DEFAULT_ROOT_DIRECTORY; // set parentDirectory ()
+      formattedResponse.parentDirectory =
+        directoryId || process.env.DEFAULT_ROOT_DIRECTORY; // set parentDirectory ()
 
       // Assuming 'addQuiz' is an asynchronous function that returns a promise
       const data = await addQuiz(formattedResponse);

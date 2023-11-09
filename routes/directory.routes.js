@@ -18,7 +18,7 @@ router.get("/", directories.redirectToRoot);
 router.get("/:id", directories.readDirectory);
 
 // Moving a directory
-router.put("/moveDir", directories.moveDirectory);
+router.put("/movedir", directories.moveDirectory);
 
 // Route for renaming a directory
 router.put("/rename", directories.renameDirectory);

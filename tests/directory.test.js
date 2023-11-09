@@ -5,6 +5,7 @@ const express = require("express");
 const db = require("./database");
 /* const app = require("./quiz.test"); */
 const directory_routes = require("../routes/directory.routes.js");
+const quiz_routes = require("../routes/quiz.routes.js");
 
 const app = express();
 
@@ -12,6 +13,7 @@ const app = express();
 app.use(express.json());
 
 app.use("/api/directory", directory_routes);
+app.use("/api/quizzes", quiz_routes);
 
 jest.setTimeout(90000);
 
@@ -23,9 +25,35 @@ async function createTestDirectory(app, name, parentDirectoryId = null) {
 
   return postResult;
 }
+async function createTestQuiz(app, name, parentDirectoryId = null) {
+  const postResult = await request(app)
+    .post("/api/quizzes")
+    .send({
+      quizTitle: name,
+      questions: [
+        {
+          questionTitle: "Test Question Title 1",
+          correct_answer: "Correct",
+          incorrect_answers: ["Incorrect 1", "Incorrect 2", "Incorrect 3"],
+        },
+        {
+          questionTitle: "Test Question Title 2",
+          correct_answer: "Correct",
+          incorrect_answers: ["Incorrect 1", "Incorrect 2", "Incorrect 3"],
+        },
+      ],
+      parentDirectoryId: parentDirectoryId,
+    });
+
+  return postResult;
+}
 
 async function getDirectoryById(app, directoryId) {
   const getResult = await request(app).get(`/api/directory/${directoryId}`);
+  return getResult.body;
+}
+async function getQuizById(app, directoryId) {
+  const getResult = await request(app).get(`/api/quizzes/${directoryId}`);
   return getResult.body;
 }
 
@@ -169,24 +197,76 @@ describe("Directory API Tests", () => {
     });
   });
 
-  // describe("PUT /api/directory/rename", () => {
-  //   it("should rename a directory", async () => {
-  //     const directoryToRename = await createTestDirectory(
-  //       "Directory to Rename"
-  //     );
-  //     const newTitle = "Renamed Directory";
+  describe("PUT /api/directory/moveQuiz", () => {
+    it("should move a directory to a new parent directory", async () => {
+      let parentDirectory1 = await createTestDirectory(
+        app,
+        "Parent Directory 1"
+      );
+      let parentDirectory2 = await createTestDirectory(
+        app,
+        "Parent Directory 2"
+      );
+      let quizToMove = await createTestQuiz(
+        app,
+        "quiz to Move",
+        parentDirectory1.body._id
+      );
 
-  //     const putResult = await request(app)
-  //       .put("/api/directory/rename")
-  //       .send({ directoryId: directoryToRename._id, newTitle });
+      parentDirectory1 = await getDirectoryById(app, parentDirectory1.body._id);
+      parentDirectory2 = await getDirectoryById(app, parentDirectory2.body._id);
+      quizToMove = await getQuizById(app, quizToMove.body._id);
 
-  //     expect(putResult.status).toBe(200);
-  //     expect(putResult.body.name).toBe(newTitle);
+      expect(parentDirectory1.quizzes.length).toBe(1);
+      expect(parentDirectory2.quizzes.length).toBe(0);
+      expect(quizToMove.parentDirectory).toBe(parentDirectory1.body._id);
 
-  //     // Clean up created directory
-  //     await deleteDirectory(directoryToRename._id);
-  //   });
-  // });
+      //// Moves directoryToMove from parent1 to parent2:
+      await request(app).put("/api/directory/moveQuiz").send({
+        directoryId: quizToMove.directory._id,
+        newParentId: parentDirectory2.directory._id,
+      });
+
+      parentDirectory1 = await getDirectoryById(
+        app,
+        parentDirectory1.directory._id
+      );
+      parentDirectory2 = await getDirectoryById(
+        app,
+        parentDirectory2.directory._id
+      );
+      quizToMove = await getQuizById(app, quizToMove.directory._id);
+
+      expect(parentDirectory1.subdirectories.length).toBe(0);
+      expect(parentDirectory2.subdirectories.length).toBe(1);
+      expect(quizToMove.parentDirectory).toBe(parentDirectory2.directory._id);
+    });
+  });
+
+  describe("Move /api/movedir", () => {
+    it("should delete a directory and its items", async () => {
+      const directoryToDelete = await createTestDirectory(
+        app,
+        "Directory to Delete"
+      );
+      const quizToDelete = await createTestQuiz(
+        app,
+        "Quiz to Delete",
+        directoryToDelete._id
+      );
+      const subdirectoryToDelete = await createTestDirectory(
+        app,
+        "Subdirectory to Delete",
+        directoryToDelete.body._id
+      );
+
+      const deleteResult = await request(app)
+        .delete("/api/directory")
+        .send({ directoryId: directoryToDelete.body._id });
+
+      expect(deleteResult.status).toBe(200);
+    });
+  });
 
   // describe("PUT /api/directory/switch-order", () => {
   //   it("should switch the order of quizzes and subdirectories", async () => {
@@ -217,24 +297,28 @@ describe("Directory API Tests", () => {
   //   });
   // });
 
-  // describe("DELETE /api/directory", () => {
-  //   it("should delete a directory and its items", async () => {
-  //     const directoryToDelete = await createTestDirectory(
-  //       "Directory to Delete"
-  //     );
-  //     const quizToDelete = await createTestQuiz(
-  //       "Quiz to Delete",
-  //       directoryToDelete._id
-  //     );
-  //     const subdirectoryToDelete = await createTestDirectory(
-  //       "Subdirectory to Delete"
-  //     );
+  describe("DELETE /api/directory", () => {
+    it("should delete a directory and its items", async () => {
+      const directoryToDelete = await createTestDirectory(
+        app,
+        "Directory to Delete"
+      );
+      const quizToDelete = await createTestQuiz(
+        app,
+        "Quiz to Delete",
+        directoryToDelete._id
+      );
+      const subdirectoryToDelete = await createTestDirectory(
+        app,
+        "Subdirectory to Delete",
+        directoryToDelete.body._id
+      );
 
-  //     const deleteResult = await request(app)
-  //       .delete("/api/directory")
-  //       .send({ directoryId: directoryToDelete._id });
+      const deleteResult = await request(app)
+        .delete("/api/directory")
+        .send({ directoryId: directoryToDelete.body._id });
 
-  //     expect(deleteResult.status).toBe(200);
-  //   });
-  // });
+      expect(deleteResult.status).toBe(200);
+    });
+  });
 });
