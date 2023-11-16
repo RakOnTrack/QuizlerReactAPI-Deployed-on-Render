@@ -42,7 +42,7 @@ async function createTestQuiz(app, name, parentDirectoryId = null) {
           incorrect_answers: ["Incorrect 1", "Incorrect 2", "Incorrect 3"],
         },
       ],
-      parentDirectoryId: parentDirectoryId,
+      directoryId: parentDirectoryId,
     });
 
   return postResult;
@@ -219,12 +219,12 @@ describe("Directory API Tests", () => {
 
       expect(parentDirectory1.quizzes.length).toBe(1);
       expect(parentDirectory2.quizzes.length).toBe(0);
-      expect(quizToMove.parentDirectory).toBe(parentDirectory1.body._id);
+      expect(quizToMove.parentDirectory).toBe(parentDirectory1.directory._id);
 
       //// Moves directoryToMove from parent1 to parent2:
       await request(app).put("/api/directory/moveQuiz").send({
-        directoryId: quizToMove.directory._id,
-        newParentId: parentDirectory2.directory._id,
+        quizId: quizToMove._id,
+        newDirectoryId: parentDirectory2.directory._id,
       });
 
       parentDirectory1 = await getDirectoryById(
@@ -235,10 +235,10 @@ describe("Directory API Tests", () => {
         app,
         parentDirectory2.directory._id
       );
-      quizToMove = await getQuizById(app, quizToMove.directory._id);
+      quizToMove = await getQuizById(app, quizToMove._id);
 
-      expect(parentDirectory1.subdirectories.length).toBe(0);
-      expect(parentDirectory2.subdirectories.length).toBe(1);
+      expect(parentDirectory1.quizzes.length).toBe(0);
+      expect(parentDirectory2.quizzes.length).toBe(1);
       expect(quizToMove.parentDirectory).toBe(parentDirectory2.directory._id);
     });
   });
@@ -268,34 +268,34 @@ describe("Directory API Tests", () => {
     });
   });
 
-  // describe("PUT /api/directory/switch-order", () => {
-  //   it("should switch the order of quizzes and subdirectories", async () => {
-  //     const directoryToSwitch = await createTestDirectory(
-  //       "Directory to Switch"
-  //     );
-  //     const quiz1 = await createTestQuiz("Quiz 1", directoryToSwitch._id);
-  //     const quiz2 = await createTestQuiz("Quiz 2", directoryToSwitch._id);
-  //     const subdirectory1 = await createTestDirectory("Subdirectory 1");
-  //     const subdirectory2 = await createTestDirectory("Subdirectory 2");
+  describe("PUT /api/directory/switch-order", () => {
+    it("should switch the order of quizzes and subdirectories", async () => {
+      const quizMain = await createTestDirectory("Quiz Main");
+      const quiz1 = await createTestQuiz("Quiz 1", directoryToSwitch._id);
+      const quiz2 = await createTestQuiz("Quiz 2", directoryToSwitch._id);
+      const subdirectory1 = await createTestDirectory("Subdirectory 1");
+      const subdirectory2 = await createTestDirectory("Subdirectory 2");
 
-  //     const putResult = await request(app)
-  //       .put("/api/directory/switch-order")
-  //       .send({
-  //         directoryId: directoryToSwitch._id,
-  //         newQuizIdOrder: [quiz2._id, quiz1._id],
-  //         newSubDirIdOrder: [subdirectory2._id, subdirectory1._id],
-  //       });
+      expect(parentDirectory1.quizzes[0]).toBe();
 
-  //     expect(putResult.status).toBe(200);
+      const putResult = await request(app)
+        .put("/api/directory/switch-order")
+        .send({
+          directoryId: directoryToSwitch._id,
+          newQuizIdOrder: [quiz2._id, quiz1._id],
+          newSubDirIdOrder: [subdirectory2._id, subdirectory1._id],
+        });
 
-  //     // Clean up created directories and quizzes
-  //     await deleteDirectory(directoryToSwitch._id);
-  //     await deleteDirectory(subdirectory1._id);
-  //     await deleteDirectory(subdirectory2._id);
-  //     await deleteQuiz(quiz1._id);
-  //     await deleteQuiz(quiz2._id);
-  //   });
-  // });
+      expect(putResult.status).toBe(200);
+
+      // Clean up created directories and quizzes
+      await deleteDirectory(directoryToSwitch._id);
+      await deleteDirectory(subdirectory1._id);
+      await deleteDirectory(subdirectory2._id);
+      await deleteQuiz(quiz1._id);
+      await deleteQuiz(quiz2._id);
+    });
+  });
 
   describe("DELETE /api/directory", () => {
     it("should delete a directory and its items", async () => {

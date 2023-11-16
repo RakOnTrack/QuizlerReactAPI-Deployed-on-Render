@@ -49,15 +49,22 @@ exports.addQuiz = async (req, res) => {
     // Save the quiz into the database
     const savedQuiz = await newestQuiz.save();
 
-    
-    // Add the quiz to a directory by updating the directory's 'quizzes' array
-    await Directory.findByIdAndUpdate(savedQuiz.parentDirectory, {
-      $push: { quizzes: savedQuiz._id },
-    });
+    // Find and update the directory to add the quiz ID to the 'quizzes' array
+    const directory = await Directory.findById(savedQuiz.parentDirectory);
+
+    if (!directory) {
+      res.status(404).json({ error: "Directory not found" });
+      return;
+    }
+
+    directory.quizzes.push(savedQuiz._id);
+
+    // Save the updated directory
+    await directory.save();
 
     // Get the Quiz ID and return it in the response
-    const quizData = await getQuiz(savedQuiz._id.toString());
-    res.status(200).json(quizData);
+    await exports.getQuiz({ id: savedQuiz._id.toString() }, res);
+    // res.status(200).json(quizData);
   } catch (err) {
     if (err.code === 11000) {
       res.status(400).json({ error: "Quiz Title already taken" });
@@ -68,7 +75,6 @@ exports.addQuiz = async (req, res) => {
     }
   }
 };
-
 
 // add a new quiz and add it to a directory
 exports.addQuizToDir = async (req, res) => {
@@ -93,7 +99,7 @@ exports.addQuizToDir = async (req, res) => {
 };
 
 // FIXME: Need to fix - Add a new quiz using AI
-exports.addQuizWithAI = async function (req) {
+exports.addQuizWithAI = async function (req, res) {
   return new Promise(async (resolve, reject) => {
     // Return a promise
     const { quizTopic, questionCount, directoryId } = req;
@@ -130,20 +136,54 @@ exports.addQuizWithAI = async function (req) {
         // { role: "user", content: sndPrompt },
       ];
 
-      const completion = await openai.chat.completions.create({
-        model: "ft:gpt-3.5-turbo-0613:personal::8GHsfxGO",
-        messages: messages,
-        temperature: 0.0,
-        max_tokens: 800,
-      });
+      // const completion = await openai.chat.completions.create({
+      //   model: "ft:gpt-3.5-turbo-0613:personal::8GHsfxGO",
+      //   messages: messages,
+      //   temperature: 0.0,
+      //   max_tokens: 800,
+      // });
 
-      const completionText = completion.choices[0].message.content;
+      // const completionText = completion.choices[0].message.content;
+      const completionText = `{
+        "quizTitle": "Urban Playground Quiz",
+        "questions": [
+          {
+            "questionTitle": "What is the atmosphere of an urban playground like?",
+            "correct_answer": "Vibrant and dynamic",
+            "incorrect_answers": ["Quiet and peaceful", "Loud and chaotic", "Calm and serene"]
+          },
+          {
+            "questionTitle": "What type of activities can be found in an urban playground?",
+            "correct_answer": "Art, music, and technology",
+            "incorrect_answers": ["Sports, shopping, and dining", "Gardening, cooking, and crafting", "Hiking, biking, and swimming"]
+          },
+          {
+            "questionTitle": "What type of people can be found in an urban playground?",
+            "correct_answer": "People from all walks of life",
+            "incorrect_answers": ["Only young people", "Only wealthy people", "Only people with a certain hobby"]
+          },
+          {
+            "questionTitle": "What type of environment is an urban playground?",
+            "correct_answer": "Bustling city",
+            "incorrect_answers": ["Quiet countryside", "Suburban neighborhood", "Remote mountain village"]
+          },
+          {
+            "questionTitle": "What is the atmosphere of an urban playground filled with?",
+            "correct_answer": "The rhythms of diverse cultures and the aroma of street food",
+            "incorrect_answers": ["The sound of traffic and the smell of exhaust", "The sound of birds and the smell of flowers", "The sound of waves and the smell of salt"]
+          }
+        ]
+      }`;
       const formattedResponse = JSON.parse(completionText); // Parse the JSON string
-      formattedResponse.parentDirectory =
+      formattedResponse.directoryId =
         directoryId || process.env.DEFAULT_ROOT_DIRECTORY; // set parentDirectory ()
 
       // Assuming 'addQuiz' is an asynchronous function that returns a promise
-      const data = await addQuiz(formattedResponse);
+      let dataArg = {
+        body: formattedResponse,
+      };
+
+      const data = await exports.addQuiz(dataArg, res);
       console.log(data);
       resolve(data); // Resolve with the retrieved data
     } catch (error) {
@@ -277,7 +317,7 @@ exports.getQuizzes = (req, res) => {
 
 // get a single quiz by ID
 exports.getQuiz = (req, res) => {
-  let quizID = req.params.id;
+  let quizID = req.id || req.params.id;
   Quiz.findById(quizID)
     .populate({
       path: "questions",
@@ -630,47 +670,47 @@ function getQuizzes() {
   });
 }
 
-function addQuiz(quizData) {
-  return new Promise(function (resolve, reject) {
-    const { quizTitle, questions, parentDirectory } = quizData;
+// function addQuiz(quizData) {
+//   return new Promise(function (resolve, reject) {
+//     const { quizTitle, questions, parentDirectory } = quizData;
 
-    if (!quizTitle || !questions) {
-      reject("quizTitle, questions, or directoryId not valid.");
-    } else {
-      Question.insertMany(questions)
-        .then((insertedQuestions) => {
-          const questionIds = insertedQuestions.map((question) => question._id);
-          let newestQuiz = new Quiz({
-            quizTitle,
-            questions: questionIds,
-          });
-          // we need to do it this way because if directoryID isnt defined, then it needs to become the default value, set by the schema
+//     if (!quizTitle || !questions) {
+//       reject("quizTitle, questions, or directoryId not valid.");
+//     } else {
+//       Question.insertMany(questions)
+//         .then((insertedQuestions) => {
+//           const questionIds = insertedQuestions.map((question) => question._id);
+//           let newestQuiz = new Quiz({
+//             quizTitle,
+//             questions: questionIds,
+//           });
+//           // we need to do it this way because if directoryID isnt defined, then it needs to become the default value, set by the schema
 
-          newestQuiz.parentDirectory =
-            parentDirectory || process.env.DEFAULT_ROOT_DIRECTORY;
+//           newestQuiz.parentDirectory =
+//             parentDirectory || process.env.DEFAULT_ROOT_DIRECTORY;
 
-          return newestQuiz.save();
-        })
-        .then((savedQuiz) => {
-          // Store the _id of the newly created quiz
+//           return newestQuiz.save();
+//         })
+//         .then((savedQuiz) => {
+//           // Store the _id of the newly created quiz
 
-          // Add the new quiz's _id to the directory's quizzes array
-          return Directory.findByIdAndUpdate(savedQuiz.directory, {
-            $push: { quizzes: savedQuiz._id },
-          }).then(() => {
-            return getQuiz(savedQuiz._id); // Call getQuiz with the newly saved quiz ID
-          });
-        })
-        .then((retrievedQuiz) => {
-          resolve(retrievedQuiz); // Resolve with the retrieved quiz data
-        })
-        .catch((err) => {
-          if (err.code === 11000) {
-            reject("Quiz Title already taken");
-          } else {
-            reject("There was an error creating the quiz: " + err);
-          }
-        });
-    }
-  });
-}
+//           // Add the new quiz's _id to the directory's quizzes array
+//           return Directory.findByIdAndUpdate(savedQuiz.directory, {
+//             $push: { quizzes: savedQuiz._id },
+//           }).then(() => {
+//             return getQuiz(savedQuiz._id); // Call getQuiz with the newly saved quiz ID
+//           });
+//         })
+//         .then((retrievedQuiz) => {
+//           resolve(retrievedQuiz); // Resolve with the retrieved quiz data
+//         })
+//         .catch((err) => {
+//           if (err.code === 11000) {
+//             reject("Quiz Title already taken");
+//           } else {
+//             reject("There was an error creating the quiz: " + err);
+//           }
+//         });
+//     }
+//   });
+// }

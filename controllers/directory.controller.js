@@ -435,10 +435,9 @@ exports.moveQuiz = async (req, res) => {
     quiz.parentDirectory = newDirectoryId;
 
     // 3. Remove the quiz _id from the original parent directory.
-    const indexToRemove = originalDirectory.quizzes.indexOf(quizId);
-    if (indexToRemove !== -1) {
-      originalDirectory.quizzes.splice(indexToRemove, 1);
-    }
+    originalDirectory.quizzes = originalDirectory.quizzes.filter(
+      (quizIdInArray) => quizIdInArray.toString() !== quizId.toString()
+    );
 
     // Save changes to all affected documents
     await originalDirectory.save();
@@ -446,7 +445,7 @@ exports.moveQuiz = async (req, res) => {
     await quiz.save();
 
     // chloe: is this suppose to be empty?
-    res.status(200);
+    res.status(200).json({ message: "succesfully moved quiz" });
   } catch (error) {
     res.status(401).json({ error: error });
   }
