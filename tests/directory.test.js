@@ -90,7 +90,7 @@ describe("Directory API Tests", () => {
       const postResult = await createTestDirectory(
         app,
         "Child Directory",
-        parentDirectory.body._id,
+        parentDirectory.body._id
       );
 
       // The post result body is the parentDirectory.
@@ -103,12 +103,48 @@ describe("Directory API Tests", () => {
     });
   });
 
-  // reading a directory
+  // Test Case 2.1: Create directory without providing a name
+  describe("POST /api/directory", () => {
+    it("should return an error when name is not provided", async () => {
+      const postResult = await request(app).post("/api/directory").send({});
+
+      expect(postResult.status).toBe(400);
+      expect(postResult.body).toHaveProperty("error");
+    });
+  });
+
+  // Test Case 2.2: Create directory with an invalid parent directory ID
+  describe("POST /api/directory", () => {
+    it("should return an error when the parent directory ID is invalid", async () => {
+      const postResult = await request(app)
+        .post("/api/directory")
+        .send({ name: "Test Directory", parentDirectoryId: "invalidID" });
+
+      expect(postResult.status).toBe(401);
+      expect(postResult.body).toHaveProperty("error");
+    });
+  });
+
+  // Test Case 2.3: Create directory with a non-existent parent directory
+  describe("POST /api/directory", () => {
+    it("should return an error when the parent directory does not exist", async () => {
+      const postResult = await request(app)
+        .post("/api/directory")
+        .send({ name: "Test Directory", parentDirectoryId: "nonexistentID" });
+
+      expect(postResult.status).toBe(401);
+      expect(postResult.body).toHaveProperty("error");
+    });
+  });
+
+  /** Test Case 2:
+   // reading a directory
+   */
   describe("get /api/directory/", () => {
     it("should create and read a new directory", async () => {
       const parentDirectory1 = await createTestDirectory(
         app,
-        "Parent Directory 1",
+        "Parent Directory 1"
       );
 
       expect(parentDirectory1.status).toBe(200);
@@ -126,20 +162,22 @@ describe("Directory API Tests", () => {
     });
   });
 
+  /** Test Case 5: **/
+
   describe("PUT /api/directory/moveDir", () => {
     it("should move a directory to a new parent directory", async () => {
       let parentDirectory1 = await createTestDirectory(
         app,
-        "Parent Directory 1",
+        "Parent Directory 1"
       );
       let parentDirectory2 = await createTestDirectory(
         app,
-        "Parent Directory 2",
+        "Parent Directory 2"
       );
       let directoryToMove = await createTestDirectory(
         app,
         "Directory to Move",
-        parentDirectory1.body._id,
+        parentDirectory1.body._id
       );
 
       parentDirectory1 = await updateDir(app, parentDirectory1);
@@ -149,7 +187,7 @@ describe("Directory API Tests", () => {
       expect(parentDirectory1.body.subdirectories.length).toBe(1);
       expect(parentDirectory2.body.subdirectories.length).toBe(0);
       expect(directoryToMove.body.parentDirectory).toBe(
-        parentDirectory1.body._id,
+        parentDirectory1.body._id
       );
 
       //// Moves directoryToMove from parent1 to parent2:
@@ -165,25 +203,53 @@ describe("Directory API Tests", () => {
       expect(parentDirectory1.body.subdirectories.length).toBe(0);
       expect(parentDirectory2.body.subdirectories.length).toBe(1);
       expect(directoryToMove.body.parentDirectory).toBe(
-        parentDirectory2.body._id,
+        parentDirectory2.body._id
       );
     });
   });
+
+  // Test Case 5.1: Move directory to a non-existent parent directory
+  describe("PUT /api/directory/moveDir", () => {
+    it("should return an error when the new parent directory does not exist", async () => {
+      const moveResult = await request(app).put("/api/directory/moveDir").send({
+        directoryId: "directoryToMoveID",
+        newParentId: "nonexistentParentID",
+      });
+
+      expect(moveResult.status).toBe(401);
+      expect(moveResult.body).toHaveProperty("error");
+    });
+  });
+
+  // Test Case 5.2: Move directory to itself
+  describe("PUT /api/directory/moveDir", () => {
+    it("should return an error when moving a directory to itself", async () => {
+      const moveResult = await request(app).put("/api/directory/moveDir").send({
+        directoryId: "directoryToMoveID",
+        newParentId: "directoryToMoveID",
+      });
+
+      expect(moveResult.status).toBe(401);
+      expect(moveResult.body).toHaveProperty("error");
+    });
+  });
+
+  /** Test Case 6: **/
 
   describe("PUT /api/directory/moveQuiz", () => {
     it("should move a quiz to a new parent directory", async () => {
       let parentDirectory1 = await createTestDirectory(
         app,
-        "Parent Directory 1",
+        "Parent Directory 1"
       );
       let parentDirectory2 = await createTestDirectory(
         app,
-        "Parent Directory 2",
+        "Parent Directory 2"
       );
       let quizToMove = await createTestQuiz(
         app,
         "quiz to Move",
-        parentDirectory1.body._id,
+        parentDirectory1.body._id
       );
 
       parentDirectory1 = await updateDir(app, parentDirectory1);
@@ -210,21 +276,23 @@ describe("Directory API Tests", () => {
     });
   });
 
+  /** Test Case 6: **/
+
   describe("delete /api/directory", () => {
     it("should delete a directory and its items", async () => {
       const directoryToDelete = await createTestDirectory(
         app,
-        "Directory to Delete",
+        "Directory to Delete"
       );
       const quizToDelete = await createTestQuiz(
         app,
         "Quiz to Delete",
-        directoryToDelete._id,
+        directoryToDelete._id
       );
       const subdirectoryToDelete = await createTestDirectory(
         app,
         "Subdirectory to Delete",
-        directoryToDelete.body._id,
+        directoryToDelete.body._id
       );
 
       const deleteResult = await request(app)
@@ -242,6 +310,32 @@ describe("Directory API Tests", () => {
     });
   });
 
+  // Test Case 6.1: Delete a non-existent directory
+  describe("delete /api/directory", () => {
+    it("should return an error when the directory to delete does not exist", async () => {
+      const deleteResult = await request(app)
+        .delete("/api/directory")
+        .send({ directoryId: "nonexistentID" });
+
+      expect(deleteResult.status).toBe(401);
+      expect(deleteResult.body).toHaveProperty("error");
+    });
+  });
+
+  // Test Case 6.2: Delete the root directory
+  describe("delete /api/directory", () => {
+    it("should return an error when attempting to delete the root directory", async () => {
+      const deleteResult = await request(app)
+        .delete("/api/directory")
+        .send({ directoryId: process.env.DEFAULT_ROOT_DIRECTORY });
+
+      expect(deleteResult.status).toBe(401);
+      expect(deleteResult.body).toHaveProperty("error");
+    });
+  });
+
+  /** Test Case 7: **/
+
   describe("PUT /api/directory/switch-order", () => {
     it("should switch the order of quizzes and subdirectories", async () => {
       let mainDir = await createTestDirectory(app, "Quiz Main");
@@ -250,12 +344,12 @@ describe("Directory API Tests", () => {
       const subdirectory1 = await createTestDirectory(
         app,
         "Subdirectory 1",
-        mainDir.body._id,
+        mainDir.body._id
       );
       const subdirectory2 = await createTestDirectory(
         app,
         "Subdirectory 2",
-        mainDir.body._id,
+        mainDir.body._id
       );
 
       mainDir = await updateDir(app, mainDir);
@@ -278,4 +372,40 @@ describe("Directory API Tests", () => {
       expect(mainDir.body.subdirectories[0].name).toBe(subdirectory2.body.name);
     });
   });
+
+  // Test Case 8.1: Switch the order with invalid quiz or subdirectory IDs
+  describe("PUT /api/directory/switch-order", () => {
+    it("should return an error with invalid quiz or subdirectory IDs", async () => {
+      const putResult = await request(app)
+        .put("/api/directory/switch-order")
+        .send({
+          directoryId: "directoryID",
+          newQuizIdOrder: ["invalidQuizID"],
+          newSubDirIdOrder: ["invalidSubDirID"],
+        });
+
+      expect(putResult.status).toBe(401);
+      expect(putResult.body).toHaveProperty("error");
+    });
+  });
+
+  // Test Case 8.2: Switch the order with mismatched array lengths
+  describe("PUT /api/directory/switch-order", () => {
+    it("should return an error with mismatched array lengths", async () => {
+      const putResult = await request(app)
+        .put("/api/directory/switch-order")
+        .send({
+          directoryId: "directoryID",
+          newQuizIdOrder: ["quiz1ID", "quiz2ID"],
+          newSubDirIdOrder: ["subdir1ID"],
+        });
+
+      expect(putResult.status).toBe(401);
+      expect(putResult.body).toHaveProperty("error");
+    });
+  });
+
+
+
+
 });
