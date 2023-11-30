@@ -2,11 +2,11 @@ const db = require("../models/index"); // retrieve mongo connection
 
 let Quiz = db.mongoose.connection.model(
   "Quizzes",
-  require("../models/quiz.model")
+  require("../models/quiz.model"),
 );
 let Directory = db.mongoose.connection.model(
   "Directory",
-  require("../models/directory.model")
+  require("../models/directory.model"),
 );
 
 // Creating a new directory
@@ -47,6 +47,7 @@ exports.createDirectory = async (req, res) => {
     // If this is a test environment and there's no root directory, return the directory details
     if (
       process.env.NODE_ENV === "test" &&
+      //allow this to be the root directory, for now at least.
       req.body.parentDirectoryId === null
     ) {
       return res.status(200).json(savedDirectory);
@@ -160,7 +161,7 @@ exports.readDirectory = async (req, res) => {
           (count, question) => {
             return count + (question.isCorrect === true ? 1 : 0);
           },
-          0
+          0,
         );
 
         return {
@@ -169,16 +170,14 @@ exports.readDirectory = async (req, res) => {
           numberOfQuestions: quiz.questions.length,
           numberOfCorrectQuestions: numberOfCorrectQuestions,
         };
-      })
+      }),
     );
 
     // Format result directory
     // chloe: can this be in a Directory object?
     let directory_result = {
-      directory: {
-        _id: directory._id,
-        name: directory.name,
-      },
+      _id: directory._id,
+      name: directory.name,
       subdirectories: subdirectoryData,
       quizzes: quizData,
     };
@@ -224,14 +223,13 @@ exports.moveDirectory = async (req, res) => {
 
     // Remove the directoryId from the original parent directory's subdirectories.
     if (originalParentId) {
-      const originalParentDirectory = await Directory.findById(
-        originalParentId
-      );
+      const originalParentDirectory =
+        await Directory.findById(originalParentId);
       if (originalParentDirectory) {
         originalParentDirectory.subdirectories =
           //removing the directory by only keeping subdirectories that dont match the directoryID.
           originalParentDirectory.subdirectories.filter(
-            (sub) => sub.toString() !== directoryId
+            (sub) => sub.toString() !== directoryId,
           );
         await originalParentDirectory.save();
       }
@@ -269,7 +267,7 @@ exports.renameDirectory = async (req, res) => {
     const updatedDir = await Directory.findByIdAndUpdate(
       directoryId,
       { name: newTitle },
-      { new: true }
+      { new: true },
     ).exec();
 
     if (updatedDir) {
@@ -325,7 +323,7 @@ exports.switchOrder = async (req, res) => {
 
     // Check that each _id in subdirectoryIds exists in the original subdirectories array
     for (const subdirectoryId of directory.subdirectories) {
-      if (!newSubDirIdOrder.includes(subdirectoryId)) {
+      if (!newSubDirIdOrder.includes(subdirectoryId.toString())) {
         res.status(401).json({
           error: `Subdirectory with ID ${subdirectoryId} not found in original subdirectories`,
         });
@@ -340,7 +338,7 @@ exports.switchOrder = async (req, res) => {
     await directory.save();
 
     // chloe: is this suppose to be empty?
-    res.status(200);
+    res.status(200).json({ message: "succesfully switched order!" });
   } catch (error) {
     res.status(401).json({ error: error });
   }
@@ -355,8 +353,10 @@ exports.deleteDirectory = async (req, res, flag = true) => {
 
     if (!directory) {
       res.status(401).json({ error: "Directory not found" });
+      return;
     } else if (directoryId == process.env.DEFAULT_ROOT_DIRECTORY) {
       res.status(401).json({ error: "Cannot delete route directory." });
+      return;
     }
 
     // Delete all quizzes within the directory
@@ -436,7 +436,7 @@ exports.moveQuiz = async (req, res) => {
 
     // 3. Remove the quiz _id from the original parent directory.
     originalDirectory.quizzes = originalDirectory.quizzes.filter(
-      (quizIdInArray) => quizIdInArray.toString() !== quizId.toString()
+      (quizIdInArray) => quizIdInArray.toString() !== quizId.toString(),
     );
 
     // Save changes to all affected documents

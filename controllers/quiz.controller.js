@@ -8,15 +8,15 @@ const openai = new OpenAI({
 
 let Question = db.mongoose.connection.model(
   "Questions",
-  require("../models/question.model")
+  require("../models/question.model"),
 );
 let Quiz = db.mongoose.connection.model(
   "Quizzes",
-  require("../models/quiz.model")
+  require("../models/quiz.model"),
 );
 let Directory = db.mongoose.connection.model(
   "Directory",
-  require("../models/directory.model")
+  require("../models/directory.model"),
 );
 
 // ==== Create ====
@@ -49,18 +49,22 @@ exports.addQuiz = async (req, res) => {
     // Save the quiz into the database
     const savedQuiz = await newestQuiz.save();
 
-    // Find and update the directory to add the quiz ID to the 'quizzes' array
-    const directory = await Directory.findById(savedQuiz.parentDirectory);
+    //allow the quiz to have no directory.
+    if (!process.env.NODE_ENV != "test" && directoryId != null) {
+      // return res.status(200).json(savedDirectory);
+      // Find and update the directory to add the quiz ID to the 'quizzes' array
+      const directory = await Directory.findById(savedQuiz.parentDirectory);
 
-    if (!directory) {
-      res.status(404).json({ error: "Directory not found" });
-      return;
+      if (!directory) {
+        res.status(404).json({ error: "Directory not found" });
+        return;
+      }
+
+      directory.quizzes.push(savedQuiz._id);
+
+      // Save the updated directory
+      await directory.save();
     }
-
-    directory.quizzes.push(savedQuiz._id);
-
-    // Save the updated directory
-    await directory.save();
 
     // Get the Quiz ID and return it in the response
     await exports.getQuiz({ id: savedQuiz._id.toString() }, res);
@@ -393,7 +397,7 @@ exports.addQuestion = async (req, res) => {
         Quiz.findByIdAndUpdate(
           quizID,
           { $push: { questions: savedQuestion._id } },
-          { new: true }
+          { new: true },
         )
           .exec()
           .then(async () => {
@@ -588,7 +592,7 @@ exports.deleteQuestion = (req, res) => {
       // Remove the question reference from all quizzes
       return Quiz.updateMany(
         { questions: questionID },
-        { $pull: { questions: questionID } }
+        { $pull: { questions: questionID } },
       ).exec();
     })
     .then(() => {

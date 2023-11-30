@@ -1,54 +1,57 @@
-const bcrypt = require('bcryptjs');
+const bcrypt = require("bcryptjs");
 const models = require("../models");
 
 let User = models.userSchema;
 
 // Create a new user
 module.exports.registerUser = function (userData) {
-    return new Promise(function (resolve, reject) {
+  return new Promise(function (resolve, reject) {
+    if (userData.password != userData.password2) {
+      reject("Passwords do not match");
+    } else {
+      bcrypt
+        .hash(userData.password, 10)
+        .then((hash) => {
+          userData.password = hash;
 
-        if (userData.password != userData.password2) {
-            reject("Passwords do not match");
-        } else {
+          let newUser = new User(userData);
 
-            bcrypt.hash(userData.password, 10).then(hash => {
-
-                userData.password = hash;
-
-                let newUser = new User(userData);
-
-                newUser.save().then(() => {
-                    resolve("User " + userData.userName + " successfully registered");  
-                }).catch(err => {
-                    if (err.code == 11000) {
-                        reject("User Name already taken");
-                    } else {
-                        reject("There was an error creating the user: " + err);
-                    }
-                })
-            }).catch(err => reject(err));
-        }
-    });
+          newUser
+            .save()
+            .then(() => {
+              resolve("User " + userData.userName + " successfully registered");
+            })
+            .catch((err) => {
+              if (err.code == 11000) {
+                reject("User Name already taken");
+              } else {
+                reject("There was an error creating the user: " + err);
+              }
+            });
+        })
+        .catch((err) => reject(err));
+    }
+  });
 };
 
 // Check if user exists
 module.exports.checkUser = function (userData) {
-    return new Promise(function (resolve, reject) {
-
-        User.findOne({ userName: userData.userName })
-            .exec()
-            .then(user => {
-                bcrypt.compare(userData.password, user.password).then(res => {
-                    if (res === true) {
-                        resolve(user);
-                    } else {
-                        reject("Incorrect password for user " + userData.userName);
-                    }
-                });
-            }).catch(err => {
-                reject("Unable to find user " + userData.userName);
-            });
-    });
+  return new Promise(function (resolve, reject) {
+    User.findOne({ userName: userData.userName })
+      .exec()
+      .then((user) => {
+        bcrypt.compare(userData.password, user.password).then((res) => {
+          if (res === true) {
+            resolve(user);
+          } else {
+            reject("Incorrect password for user " + userData.userName);
+          }
+        });
+      })
+      .catch((err) => {
+        reject("Unable to find user " + userData.userName);
+      });
+  });
 };
 
 // module.exports.getFavourites = function (id) {
@@ -83,7 +86,6 @@ module.exports.checkUser = function (userData) {
 //         })
 
 //     });
-
 
 // }
 

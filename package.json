@@ -4,15 +4,18 @@
   "description": "",
   "main": "server.js",
   "scripts": {
+    "lint": "eslint .",
+    "lint:fix": "eslint --fix .",
+    "format": "prettier --write .",
     "test": "cross-env NODE_ENV=test jest --forceExit --runInBand --detectOpenHandles --verbose",
     "start": "node server.js",
     "coverage": "jest -c jest.config.js --runInBand --coverage",
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "both": "npm run lint && npm run format"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@dqbd/tiktoken": "^1.0.7",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "cross-env": "^7.0.3",
@@ -26,13 +29,15 @@
     "node-fetch": "^3.3.2",
     "nodemon": "^3.0.1",
     "openai": "^4.12.4",
-    "supertest": "^6.3.3",
-    "tokenizer": "^1.1.2"
+    "supertest": "^6.3.3"
   },
   "engines": {
     "node": ">14"
   },
   "devDependencies": {
-    "mongodb-memory-server": "^9.0.0"
+    "eslint": "^8.53.0",
+    "eslint-plugin-react": "^7.33.2",
+    "mongodb-memory-server": "^9.0.0",
+    "prettier": "^3.1.0"
   }
 }

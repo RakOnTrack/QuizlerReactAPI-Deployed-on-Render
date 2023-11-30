@@ -3,12 +3,14 @@ var router = require("express").Router();
 const directories = require("../controllers/directory.controller.js");
 
 // Create a new directory
-router.post("/", directories.createDirectory
-    // If req.body.parentDirectoryId is falsy, and you want to ensure a default value,
-    // you can explicitly set it to the default here
-    // if (!req.body.parentDirectoryId) {
-    //   req.body.parentDirectoryId = process.env.DEFAULT_ROOT_DIRECTORY;
-    // }
+router.post(
+  "/",
+  directories.createDirectory,
+  // If req.body.parentDirectoryId is falsy, and you want to ensure a default value,
+  // you can explicitly set it to the default here
+  // if (!req.body.parentDirectoryId) {
+  //   req.body.parentDirectoryId = process.env.DEFAULT_ROOT_DIRECTORY;
+  // }
 );
 
 // Read directory, going to default root directory

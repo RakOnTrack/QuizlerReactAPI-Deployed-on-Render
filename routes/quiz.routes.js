@@ -13,7 +13,6 @@ const upload = multer(); // Create an instance of multer
 // Add a quiz using openai api to generate it
 // router.post("/openai", upload.none(), quizService.addQuizWithAI(req.body));
 
-
 // Add a quiz using openai api to generate it
 router.post("/openai", upload.none(), async (req, res) => {
   quizService
