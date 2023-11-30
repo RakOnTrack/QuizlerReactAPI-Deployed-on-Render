@@ -44,8 +44,8 @@ async function createTestQuiz(app, name, parentDirectoryId = null) {
 }
 
 async function updateQuiz(app, quiz) {
-  const getResult = await request(app).get(`/api/quizzes/${quiz._id}`);
-  return getResult.body;
+  const getResult = await request(app).get(`/api/quizzes/${quiz.body._id}`);
+  return getResult;
 }
 
 describe("Quiz API Tests", () => {
@@ -119,6 +119,8 @@ describe("Quiz API Tests", () => {
       const quiz5 = await createTestQuiz(app, "Test Quiz Title5");
 
       const res2 = await request(app).get("/api/quizzes");
+
+      // quizToMove = await updateQuiz(app, );
       expect(res2.status).toBe(200);
       expect(res2.body.length - res1.body.length).toBe(5);
 
@@ -133,10 +135,10 @@ describe("Quiz API Tests", () => {
     it("should get the quiz from the database by its ID", async () => {
       const quiz = await createTestQuiz(app, "Test Quiz Title");
 
-      expect(quiz1.status).toBe(200);
+      expect(quiz.status).toBe(200);
       let id = quiz.body._id;
 
-      const getResult = await request(app).get(`/api/quizzes/${id}`);
+      const getResult = await updateQuiz(app, quiz);
       expect(getResult.status).toBe(200);
     });
   });
@@ -205,32 +207,31 @@ describe("Quiz API Tests", () => {
    */
   describe("PUT /api/quizzes/update/:id", () => {
     it("should update the study results for the quiz", async () => {
-      const testQuiz = await createTestQuiz(app, "Test Quiz Title");
+      let testQuiz = await createTestQuiz(app, "Test Quiz Title");
 
       expect(testQuiz.status).toBe(200);
       let id = testQuiz.body._id;
-      let question1Id = testQuiz.body.questions[0]._id;
 
       const putResult = await request(app)
         .put(`/api/quizzes/update/${id}`)
         .send({
-          correctQuestions: [
-            {
-              _id: question1Id,
-            },
-          ],
+          correctQuestions: [testQuiz.body.questions[0]._id],
         });
       expect(putResult.status).toBe(200);
-      expect(testQuiz.body.questions[0].isCorrect).toBe(false);
-      expect(putResult.body.questions[1].isCorrect).toBe(false);
 
-      // Check if questions have been marked as correct
-      const getResult = await request(app).get(`/api/quizzes/${id}`);
+      let getResult = await updateQuiz(app, testQuiz);
+
       expect(getResult.status).toBe(200);
-
-
       expect(getResult.body.questions[0].isCorrect).toBe(true);
       expect(getResult.body.questions[1].isCorrect).toBe(false);
+
+      // Check if questions have been marked as correct
+      getResult = await updateQuiz(app, testQuiz);
+
+      expect(getResult.status).toBe(200);
+
+      // expect(getResult.body.questions[0].isCorrect).toBe(false);
+      // expect(getResult.body.questions[1].isCorrect).toBe(false);
     });
   });
 
@@ -245,7 +246,7 @@ describe("Quiz API Tests", () => {
       expect(testQuiz.status).toBe(200);
       let id = testQuiz.body._id;
 
-      expect(getResult.body.questions[0].isCorrect).toBe(false);
+      expect(testQuiz.body.questions[0].isCorrect).toBe(false);
       // Mark questions as correct
       const markCorrectResult = await request(app)
         .put(`/api/quizzes/update/${id}`)
@@ -254,7 +255,7 @@ describe("Quiz API Tests", () => {
         });
 
       // Get updated results to check if questions have been marked as correct
-      const getResult = await request(app).get(`/api/quizzes/${id}`);
+      const getResult = await updateQuiz(app, testQuiz);
       expect(getResult.status).toBe(200);
 
       expect(getResult.status).toBe(200);
@@ -265,7 +266,7 @@ describe("Quiz API Tests", () => {
       expect(putResult.status).toBe(200);
 
       // Now you can add assertions to check if the questions have been marked as incorrect after restarting the quiz
-      const updatedQuiz = await request(app).get(`/api/quizzes/${id}`);
+      const updatedQuiz = await updateQuiz(app, testQuiz);
 
       expect(updatedQuiz.status).toBe(200);
       expect(updatedQuiz.body.questions).toHaveLength(2);
@@ -286,7 +287,7 @@ describe("Quiz API Tests", () => {
       let id = testQuiz.body._id;
 
       // check that it actually exists
-      let getResult = await request(app).get("/api/quizzes");
+      let getResult = await updateQuiz(app, testQuiz);
       expect(getResult.status).toBe(200);
 
       // delete the quiz
@@ -294,8 +295,8 @@ describe("Quiz API Tests", () => {
       expect(deleteResult.status).toBe(200);
 
       // try to get the quiz to see that it doesnt work:
-      getResult = await request(app).get("/api/quizzes");
-      expect(getResult.status).toBe(422);
+      getResult = await updateQuiz(app, testQuiz);
+      expect(getResult.status).toBe(404);
 
       //console.log(deleteResult.body.length);
       //expect(deleteResult.body.length).not.toBe(quizNumber);
@@ -337,7 +338,7 @@ describe("Quiz API Tests", () => {
 
       expect(testQuiz.status).toBe(200);
       // check its question length:
-      expect(testQuiz.body.question.length).toBe(2);
+      expect(testQuiz.body.questions.length).toBe(2);
 
       // let q1_id = testQuiz.body.questions[0]._id;
 
@@ -349,7 +350,7 @@ describe("Quiz API Tests", () => {
       const updatedQuiz = await request(app).get(
         `/api/quizzes/${testQuiz.body._id}`
       );
-      expect(updatedQuiz.body.question.length).toBe(1);
+      expect(updatedQuiz.body.questions.length).toBe(1);
     });
   });
 

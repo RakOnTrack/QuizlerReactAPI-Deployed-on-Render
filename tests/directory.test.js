@@ -2,7 +2,7 @@
 
 const request = require("supertest");
 const express = require("express");
-const db = require("./database");
+const db = require("./database.js");
 /* const app = require("./quiz.test"); */
 const directory_routes = require("../routes/directory.routes.js");
 const quiz_routes = require("../routes/quiz.routes.js");
