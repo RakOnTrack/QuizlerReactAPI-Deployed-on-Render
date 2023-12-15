@@ -69,7 +69,34 @@ exports.addQuiz = async (req, res) => {
 
     // Get the Quiz ID and return it in the response
     await exports.getQuiz({ id: savedQuiz._id }, res);
+
+    // try {
+    //   const quiz = await Quiz.findById(savedQuiz._id)
+    //     .populate({
+    //       path: "questions",
+    //       model: "Questions",
+    //     })
+    //     .exec();
+
+    //   if (quiz) {
+    //     // Send response here
+    //     console.log("sent once");
+    //     res.status(200).json(quiz);
+    //   } else {
+    //     // Send response here
+    //     console.log("sent twice");
+    //     res
+    //       .status(404)
+    //       .json({ error: `Quiz with ID ${quizID} does not exist` });
+    //   }
+    // } catch (error) {
+    //   // Handle any errors that occurred during the asynchronous operations
+    //   console.error("An error occurred:", error);
+    //   res.status(500).json({ error: "Internal Server Error" });
+    // }
     // res.status(200).json(quizData);
+
+    
   } catch (err) {
     if (err.code === 11000) {
       res.status(400).json({ error: "Quiz Title already taken" });
@@ -83,33 +110,73 @@ exports.addQuiz = async (req, res) => {
 
 // TODO: eventually we'll have to make a condition where if the quiz has more than 50 questions, it first only add the first half, and then a second half using another call
 
-// get a single quiz by ID
-exports.getQuiz = (req, res) => {
-  let quizID = req.id || req.params.id;
-  Quiz.findById(quizID)
-    .populate({
-      path: "questions",
-      model: "Questions",
-    })
-    .exec()
-    .then((quiz) => {
-      if (quiz) {
-        // Send response here
-        console.log("sent once");
-        res.status(200).json(quiz);
-      } else {
-        // Send response here
-        console.log("sent twice");
-        res.status(404).json({ error: `Quiz with ID ${quizID} does not exist` });
-      }
-    })
-    .catch((err) => {
+// Assuming you're inside an asynchronous function or using top-level await in Node.js
+exports.getQuiz = async (req, res) => {
+  try {
+    let quizID = req.id || req.params.id;
+
+    const quiz = await Quiz.findById(quizID)
+      .populate({
+        path: "questions",
+        model: "Questions",
+      })
+      .exec();
+
+    if (quiz) {
       // Send response here
-      console.log(err);
-      res.status(422).json({ error: `Quiz with ID ${quizID} could not be found: ${err}` });
-    });
+      res.status(200).json(quiz);
+    } else {
+      // Send response here
+      res.status(404).json({ error: `Quiz with ID ${quizID} does not exist` });
+    }
+  } catch (error) {
+    // Handle any errors that occurred during the asynchronous operations
+    console.error("An error occurred:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
 };
 
+// FIXME: Need to fix - Add a new quiz using AI
+exports.addQuizWithAI = async function (req, res) {
+  // return new Promise(async (resolve, reject) => {
+  // Return a promise
+  const { quizTopic, questionCount, directoryId } = req;
+
+  console.error(quizTopic);
+
+  try {
+    if (!quizTopic || quizTopic.trim().length === 0) {
+      return reject({
+        status: 400,
+        error: "Please provide a valid quiz topic.",
+      });
+    }
+
+    //can work with 6k TOKENS! :)
+    const generatedQuiz = await generateQuiz(quizTopic, questionCount);
+
+    // const formattedResponse = JSON.parse(generatedQuiz); // Parse the JSON string
+    generatedQuiz.directoryId =
+      directoryId || process.env.DEFAULT_ROOT_DIRECTORY; // set parentDirectory ()
+
+    // Assuming 'addQuiz' is an asynchronous function that returns a promise
+    let dataArg = {
+      body: generatedQuiz,
+    };
+
+    await exports.addQuiz(dataArg, res);
+    return;
+    // console.log(data);
+    // resolve(data); // Resolve with the retrieved data
+  } catch (error) {
+    console.error(error);
+    reject({
+      status: 500,
+      error: "An error occurred during quiz generation:." + error,
+    });
+  }
+  // });
+};
 
 // add a new quiz and add it to a directory
 exports.addQuizToDir = async (req, res) => {
@@ -131,47 +198,6 @@ exports.addQuizToDir = async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: "Internal server error: " + err.message });
   }
-};
-
-// FIXME: Need to fix - Add a new quiz using AI
-exports.addQuizWithAI = async function (req, res) {
-  return new Promise(async (resolve, reject) => {
-    // Return a promise
-    const { quizTopic, questionCount, directoryId } = req;
-
-    console.error(quizTopic);
-
-    try {
-      if (!quizTopic || quizTopic.trim().length === 0) {
-        return reject({
-          status: 400,
-          error: "Please provide a valid quiz topic.",
-        });
-      }
-
-      //can work with 6k TOKENS! :)
-      const generatedQuiz = await generateQuiz(quizTopic, questionCount);
-
-      // const formattedResponse = JSON.parse(generatedQuiz); // Parse the JSON string
-      generatedQuiz.directoryId =
-        directoryId || process.env.DEFAULT_ROOT_DIRECTORY; // set parentDirectory ()
-
-      // Assuming 'addQuiz' is an asynchronous function that returns a promise
-      let dataArg = {
-        body: generatedQuiz,
-      };
-
-      const data = await exports.addQuiz(dataArg, res);
-      console.log(data);
-      resolve(data); // Resolve with the retrieved data
-    } catch (error) {
-      console.error(error);
-      reject({
-        status: 500,
-        error: "An error occurred during quiz generation:." + error,
-      });
-    }
-  });
 };
 
 // //FIXME: Add details for function
@@ -347,9 +373,9 @@ exports.addQuestion = async (req, res) => {
           .exec()
           .then(async () => {
             // Get the updated quiz data using getQuiz function
-            await getQuiz(quizID).then((updatedQuiz) => {
+            await exports.getQuiz(quizID, res).then((updatedQuiz) => {
               // Return the updated quiz
-              res.status(200).json(updatedQuiz);
+              // res.status(200).json(updatedQuiz);
             });
           })
           .catch((err) => {
@@ -557,28 +583,6 @@ exports.deleteQuestion = (req, res) => {
 };
 
 // ==== INTERNAL FUNCTIONS ====
-
-// get a single quiz.
-function getQuiz(quizID) {
-  return new Promise(function (resolve, reject) {
-    Quiz.findById(quizID)
-      .populate({
-        path: "questions",
-        model: "Questions", // Assuming 'Question' is the model name for questions
-      })
-      .exec()
-      .then((quiz) => {
-        if (quiz) {
-          resolve(quiz);
-        } else {
-          reject(`Quiz with ID ${quizID} not found`);
-        }
-      })
-      .catch((err) => {
-        reject(`Unable to retrieve quiz: ${err}`);
-      });
-  });
-}
 
 // Get all the quizzes
 function getQuizzes() {
