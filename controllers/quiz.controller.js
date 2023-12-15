@@ -5,18 +5,19 @@ require("dotenv").config();
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY, // This is also the default, can be omitted
 });
+const { generateQuiz } = require("./quizGenerator");
 
 let Question = db.mongoose.connection.model(
   "Questions",
-  require("../models/question.model"),
+  require("../models/question.model")
 );
 let Quiz = db.mongoose.connection.model(
   "Quizzes",
-  require("../models/quiz.model"),
+  require("../models/quiz.model")
 );
 let Directory = db.mongoose.connection.model(
   "Directory",
-  require("../models/directory.model"),
+  require("../models/directory.model")
 );
 
 // ==== Create ====
@@ -67,7 +68,7 @@ exports.addQuiz = async (req, res) => {
     }
 
     // Get the Quiz ID and return it in the response
-    await exports.getQuiz({ id: savedQuiz._id.toString() }, res);
+    await exports.getQuiz({ id: savedQuiz._id }, res);
     // res.status(200).json(quizData);
   } catch (err) {
     if (err.code === 11000) {
@@ -79,6 +80,36 @@ exports.addQuiz = async (req, res) => {
     }
   }
 };
+
+// TODO: eventually we'll have to make a condition where if the quiz has more than 50 questions, it first only add the first half, and then a second half using another call
+
+// get a single quiz by ID
+exports.getQuiz = (req, res) => {
+  let quizID = req.id || req.params.id;
+  Quiz.findById(quizID)
+    .populate({
+      path: "questions",
+      model: "Questions",
+    })
+    .exec()
+    .then((quiz) => {
+      if (quiz) {
+        // Send response here
+        console.log("sent once");
+        res.status(200).json(quiz);
+      } else {
+        // Send response here
+        console.log("sent twice");
+        res.status(404).json({ error: `Quiz with ID ${quizID} does not exist` });
+      }
+    })
+    .catch((err) => {
+      // Send response here
+      console.log(err);
+      res.status(422).json({ error: `Quiz with ID ${quizID} could not be found: ${err}` });
+    });
+};
+
 
 // add a new quiz and add it to a directory
 exports.addQuizToDir = async (req, res) => {
@@ -118,73 +149,16 @@ exports.addQuizWithAI = async function (req, res) {
         });
       }
 
-      // Use 'await' here to asynchronously wait for the completion
-      // const completion = await openai.completions.create({
-      //   model: "text-davinci-003",
-      //   prompt: generatePrompt(quizTopic, questionCount),
-      //   temperature: 0.0,
-      //   max_tokens: 800,
-      // });
+      //can work with 6k TOKENS! :)
+      const generatedQuiz = await generateQuiz(quizTopic, questionCount);
 
-      const messages = [
-        {
-          role: "system",
-          content:
-            "You need to create a multiple-choice quiz based on the content provided and format it in JSON with one correct answer and a maximum of three incorrect answers for each question.",
-        },
-        {
-          role: "user",
-          content: generatePrompt(quizTopic, questionCount),
-        },
-        // { role: "assistant", content: firstResponse },
-        // { role: "user", content: sndPrompt },
-      ];
-
-      // const completion = await openai.chat.completions.create({
-      //   model: "ft:gpt-3.5-turbo-0613:personal::8GHsfxGO",
-      //   messages: messages,
-      //   temperature: 0.0,
-      //   max_tokens: 800,
-      // });
-
-      // const completionText = completion.choices[0].message.content;
-      const completionText = `{
-        "quizTitle": "Urban Playground Quiz",
-        "questions": [
-          {
-            "questionTitle": "What is the atmosphere of an urban playground like?",
-            "correct_answer": "Vibrant and dynamic",
-            "incorrect_answers": ["Quiet and peaceful", "Loud and chaotic", "Calm and serene"]
-          },
-          {
-            "questionTitle": "What type of activities can be found in an urban playground?",
-            "correct_answer": "Art, music, and technology",
-            "incorrect_answers": ["Sports, shopping, and dining", "Gardening, cooking, and crafting", "Hiking, biking, and swimming"]
-          },
-          {
-            "questionTitle": "What type of people can be found in an urban playground?",
-            "correct_answer": "People from all walks of life",
-            "incorrect_answers": ["Only young people", "Only wealthy people", "Only people with a certain hobby"]
-          },
-          {
-            "questionTitle": "What type of environment is an urban playground?",
-            "correct_answer": "Bustling city",
-            "incorrect_answers": ["Quiet countryside", "Suburban neighborhood", "Remote mountain village"]
-          },
-          {
-            "questionTitle": "What is the atmosphere of an urban playground filled with?",
-            "correct_answer": "The rhythms of diverse cultures and the aroma of street food",
-            "incorrect_answers": ["The sound of traffic and the smell of exhaust", "The sound of birds and the smell of flowers", "The sound of waves and the smell of salt"]
-          }
-        ]
-      }`;
-      const formattedResponse = JSON.parse(completionText); // Parse the JSON string
-      formattedResponse.directoryId =
+      // const formattedResponse = JSON.parse(generatedQuiz); // Parse the JSON string
+      generatedQuiz.directoryId =
         directoryId || process.env.DEFAULT_ROOT_DIRECTORY; // set parentDirectory ()
 
       // Assuming 'addQuiz' is an asynchronous function that returns a promise
       let dataArg = {
-        body: formattedResponse,
+        body: generatedQuiz,
       };
 
       const data = await exports.addQuiz(dataArg, res);
@@ -200,30 +174,28 @@ exports.addQuizWithAI = async function (req, res) {
   });
 };
 
-//FIXME: Add details for function
-function generatePrompt(studyContent, questionCount = 5) {
-  return `
-  Make me a multiple-choice quiz with ${questionCount} questions about this content:
-  
-  
-  ${studyContent}. 
-  
-  
-  The quiz should be in this JSON format:
+// //FIXME: Add details for function
+// function generatePrompt(studyContent, questionCount = 5) {
+//   return `
+//   Make me a multiple-choice quiz with ${questionCount} questions about this content:
 
-  {
-    "quizTitle": STRING,
-    "questions": [
-      {
-        "questionTitle": "",
-        "correct_answer": "",
-        "incorrect_answers": []
-      },
-      ...
-    ]
-  }
-`;
-}
+//   ${studyContent}.
+
+//   The quiz should be in this JSON format:
+
+//   {
+//     "quizTitle": STRING,
+//     "questions": [
+//       {
+//         "questionTitle": "",
+//         "correct_answer": "",
+//         "incorrect_answers": []
+//       },
+//       ...
+//     ]
+//   }
+// `;
+// }
 
 // ==== Read ====
 
@@ -317,33 +289,6 @@ exports.getQuizzes = (req, res) => {
   }
 };
 
-// TODO: eventually we'll have to make a condition where if the quiz has more than 50 questions, it first only add the first half, and then a second half using another call
-
-// get a single quiz by ID
-exports.getQuiz = (req, res) => {
-  let quizID = req.id || req.params.id;
-  Quiz.findById(quizID)
-    .populate({
-      path: "questions",
-      model: "Questions", // Assuming 'Question' is the model name for questions
-    })
-    .exec()
-    .then((quiz) => {
-      if (quiz) {
-        res.status(200).json(quiz);
-      } else {
-        res
-          .status(404)
-          .json({ error: `Quiz with ID ${quizID} does not exist` });
-      }
-    })
-    .catch((err) => {
-      res
-        .status(422)
-        .json({ error: `Quiz with ID ${quizID} could not be found: ${err}` });
-    });
-};
-
 // ==== Update ====
 
 // Rename quiz using ID
@@ -397,7 +342,7 @@ exports.addQuestion = async (req, res) => {
         Quiz.findByIdAndUpdate(
           quizID,
           { $push: { questions: savedQuestion._id } },
-          { new: true },
+          { new: true }
         )
           .exec()
           .then(async () => {
@@ -592,7 +537,7 @@ exports.deleteQuestion = (req, res) => {
       // Remove the question reference from all quizzes
       return Quiz.updateMany(
         { questions: questionID },
-        { $pull: { questions: questionID } },
+        { $pull: { questions: questionID } }
       ).exec();
     })
     .then(() => {
@@ -673,48 +618,3 @@ function getQuizzes() {
       });
   });
 }
-
-// function addQuiz(quizData) {
-//   return new Promise(function (resolve, reject) {
-//     const { quizTitle, questions, parentDirectory } = quizData;
-
-//     if (!quizTitle || !questions) {
-//       reject("quizTitle, questions, or directoryId not valid.");
-//     } else {
-//       Question.insertMany(questions)
-//         .then((insertedQuestions) => {
-//           const questionIds = insertedQuestions.map((question) => question._id);
-//           let newestQuiz = new Quiz({
-//             quizTitle,
-//             questions: questionIds,
-//           });
-//           // we need to do it this way because if directoryID isnt defined, then it needs to become the default value, set by the schema
-
-//           newestQuiz.parentDirectory =
-//             parentDirectory || process.env.DEFAULT_ROOT_DIRECTORY;
-
-//           return newestQuiz.save();
-//         })
-//         .then((savedQuiz) => {
-//           // Store the _id of the newly created quiz
-
-//           // Add the new quiz's _id to the directory's quizzes array
-//           return Directory.findByIdAndUpdate(savedQuiz.directory, {
-//             $push: { quizzes: savedQuiz._id },
-//           }).then(() => {
-//             return getQuiz(savedQuiz._id); // Call getQuiz with the newly saved quiz ID
-//           });
-//         })
-//         .then((retrievedQuiz) => {
-//           resolve(retrievedQuiz); // Resolve with the retrieved quiz data
-//         })
-//         .catch((err) => {
-//           if (err.code === 11000) {
-//             reject("Quiz Title already taken");
-//           } else {
-//             reject("There was an error creating the quiz: " + err);
-//           }
-//         });
-//     }
-//   });
-// }
