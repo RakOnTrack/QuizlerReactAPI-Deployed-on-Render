@@ -129,7 +129,7 @@ exports.getQuiz = async (req, res) => {
     }
   } catch (error) {
     // Handle any errors that occurred during the asynchronous operations
-    console.error("An error occurred:", error);
+    // console.error("An error occurred:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };

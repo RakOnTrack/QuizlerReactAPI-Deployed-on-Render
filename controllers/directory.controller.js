@@ -56,7 +56,7 @@ exports.createDirectory = async (req, res) => {
     // Send a success response
     return res.status(200).json(savedDirectory);
   } catch (error) {
-    console.error(error);
+    // console.error(error);
     // Send an error response
     return res
       .status(401)
@@ -391,7 +391,7 @@ exports.deleteDirectory = async (req, res, flag = true) => {
         .json({ message: "Directory and its items deleted successfully" });
     }
   } catch (error) {
-    console.log(error);
+    // console.log(error);
     res.status(401).json({ error: error });
   }
 };
@@ -524,6 +524,6 @@ async function readDirectory(directoryId) {
 
 // TODO: Delete quiz by its ID
 function deleteQuiz(quizId) {
-  console.log("Function not implemented yet");
+  // console.log("Function not implemented yet");
   return quizId;
 }
