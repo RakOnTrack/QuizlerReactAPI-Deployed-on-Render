@@ -95,8 +95,6 @@ exports.addQuiz = async (req, res) => {
     //   res.status(500).json({ error: "Internal Server Error" });
     // }
     // res.status(200).json(quizData);
-
-    
   } catch (err) {
     if (err.code === 11000) {
       res.status(400).json({ error: "Quiz Title already taken" });
@@ -373,10 +371,8 @@ exports.addQuestion = async (req, res) => {
           .exec()
           .then(async () => {
             // Get the updated quiz data using getQuiz function
-            await exports.getQuiz(quizID, res).then((updatedQuiz) => {
-              // Return the updated quiz
-              // res.status(200).json(updatedQuiz);
-            });
+            await exports.getQuiz({ id: quizID }, res);
+            // });
           })
           .catch((err) => {
             res.status(422).json({
