@@ -339,8 +339,10 @@ describe("Directory API Tests", () => {
   describe("PUT /api/directory/switch-order", () => {
     it("should switch the order of quizzes and subdirectories", async () => {
       let mainDir = await createTestDirectory(app, "Quiz Main");
+
       const quiz1 = await createTestQuiz(app, "Quiz 1", mainDir.body._id);
       const quiz2 = await createTestQuiz(app, "Quiz 2", mainDir.body._id);
+
       const subdirectory1 = await createTestDirectory(
         app,
         "Subdirectory 1",
@@ -405,7 +407,30 @@ describe("Directory API Tests", () => {
     });
   });
 
+  /** Test Case 9: **/
 
+  describe("Test Case: Check Parent Directory Quizzes Length", () => {
+    it("should expect parentDirectory quizzes length to be 0 after deleting quiz", async () => {
+      let parentDirectory = await createTestDirectory(app, "Parent Directory");
+      const quizToDelete = await createTestQuiz(
+        app,
+        "Quiz",
+        parentDirectory.body._id
+      );
 
+      parentDirectory = await updateDir(app, parentDirectory);
+      expect(parentDirectory.body.quizzes.length).toBe(1);
 
+      const deleteResult = await request(app).delete(
+        `/api/quizzes/${quizToDelete.body._id}`
+      ); // Use the correct endpoint for deleting a quiz
+
+      parentDirectory = await updateDir(app, parentDirectory);
+      expect(parentDirectory.body.quizzes.length).toBe(0);
+
+      // expect(deleteResult.status).toBe(200);
+    });
+    // });
+    // });
+  });
 });

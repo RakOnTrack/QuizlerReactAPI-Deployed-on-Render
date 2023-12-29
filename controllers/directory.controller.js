@@ -2,18 +2,31 @@ const db = require("../models/index"); // retrieve mongo connection
 
 let Quiz = db.mongoose.connection.model(
   "Quizzes",
-  require("../models/quiz.model"),
+  require("../models/quiz.model")
 );
 let Directory = db.mongoose.connection.model(
   "Directory",
-  require("../models/directory.model"),
+  require("../models/directory.model")
 );
+// let User = db.mongoose.connection.model(
+//   "User",
+//   require("../models/user.model")
+// );
 
 // Creating a new directory
 exports.createDirectory = async (req, res) => {
   let name = req.body.name;
-  let parentDirectoryId =
-    req.body.parentDirectoryId || process.env.DEFAULT_ROOT_DIRECTORY;
+  let isRoot = req.body.isRoot || false;
+  let parentDirectoryId = req.body.isRoot
+    ? null
+    : req.body.parentDirectoryId || process.env.DEFAULT_ROOT_DIRECTORY;
+
+  // try {
+  //   // Rest of the code remains the same
+  //   // ...
+  // }
+
+  // let parentDirectoryId =  req.body.parentDirectoryId || process.env.DEFAULT_ROOT_DIRECTORY;
 
   try {
     if (!name) {
@@ -36,7 +49,7 @@ exports.createDirectory = async (req, res) => {
     }
 
     // Update the parent directory's subdirectories array
-    if (parentDirectoryId) {
+    if (parentDirectoryId && !isRoot) {
       const parentDirectory = await Directory.findById(parentDirectoryId);
       if (parentDirectory) {
         parentDirectory.subdirectories.push(savedDirectory._id);
@@ -45,15 +58,18 @@ exports.createDirectory = async (req, res) => {
     }
 
     // If this is a test environment and there's no root directory, return the directory details
-    if (
-      process.env.NODE_ENV === "test" &&
-      //allow this to be the root directory, for now at least.
-      req.body.parentDirectoryId === null
-    ) {
-      return res.status(200).json(savedDirectory);
-    }
+    // if (
+    //   process.env.NODE_ENV === "test" &&
+    //   //allow this to be the root directory, for now at least.
+    //   req.body.parentDirectoryId === null
+    // ) {
+    //   return res.status(200).json(savedDirectory);
+    // }
 
     // Send a success response
+    if (isRoot) {
+      return savedDirectory;
+    }
     return res.status(200).json(savedDirectory);
   } catch (error) {
     // console.error(error);
@@ -161,7 +177,7 @@ exports.readDirectory = async (req, res) => {
           (count, question) => {
             return count + (question.isCorrect === true ? 1 : 0);
           },
-          0,
+          0
         );
 
         return {
@@ -170,7 +186,7 @@ exports.readDirectory = async (req, res) => {
           numberOfQuestions: quiz.questions.length,
           numberOfCorrectQuestions: numberOfCorrectQuestions,
         };
-      }),
+      })
     );
 
     // Format result directory
@@ -229,7 +245,7 @@ exports.moveDirectory = async (req, res) => {
         originalParentDirectory.subdirectories =
           //removing the directory by only keeping subdirectories that dont match the directoryID.
           originalParentDirectory.subdirectories.filter(
-            (sub) => sub.toString() !== directoryId,
+            (sub) => sub.toString() !== directoryId
           );
         await originalParentDirectory.save();
       }
@@ -267,7 +283,7 @@ exports.renameDirectory = async (req, res) => {
     const updatedDir = await Directory.findByIdAndUpdate(
       directoryId,
       { name: newTitle },
-      { new: true },
+      { new: true }
     ).exec();
 
     if (updatedDir) {
@@ -285,8 +301,18 @@ exports.renameDirectory = async (req, res) => {
 // Switching the order of quizzes and subdirectories in a directory
 exports.switchOrder = async (req, res) => {
   let directoryId = req.body.directoryId;
-  let newQuizIdOrder = req.body.newQuizIdOrder;
-  let newSubDirIdOrder = req.body.newSubDirIdOrder;
+
+  let newSubDirIdOrder;
+  let newQuizIdOrder;
+
+  try {
+    newSubDirIdOrder = req.body.newSubDirIdOrder || [];
+    newQuizIdOrder = req.body.newQuizIdOrder || [];
+  } catch (error) {
+    console.error("Error parsing JSON:", error);
+    // Handle the error as needed (e.g., provide a default value for newQuizIdOrder)
+    newQuizIdOrder = [];
+  }
 
   try {
     // Find the directory by its ID
@@ -302,6 +328,7 @@ exports.switchOrder = async (req, res) => {
       res.status(401).json({ error: "newSubDirIdOrder invalid" });
     }
 
+    // console.log(directory.quizzes);
     // Check that the arrays are the same length as the original arrays
     if (
       newSubDirIdOrder.length !== directory.subdirectories.length ||
@@ -310,6 +337,7 @@ exports.switchOrder = async (req, res) => {
       res
         .status(401)
         .json({ error: "Arrays must be the same length as the original" });
+      return;
     }
 
     // Check that each _id in subdirectoryIds exists in the original subdirectories array
@@ -436,7 +464,7 @@ exports.moveQuiz = async (req, res) => {
 
     // 3. Remove the quiz _id from the original parent directory.
     originalDirectory.quizzes = originalDirectory.quizzes.filter(
-      (quizIdInArray) => quizIdInArray.toString() !== quizId.toString(),
+      (quizIdInArray) => quizIdInArray.toString() !== quizId.toString()
     );
 
     // Save changes to all affected documents
@@ -454,73 +482,73 @@ exports.moveQuiz = async (req, res) => {
 // ==== INTERNAL FUNCTIONS ====
 
 // Reading a directory and its items
-async function readDirectory(directoryId) {
-  try {
-    // Find the directory by its ID
-    const directory = await Directory.findById(directoryId);
+// async function readDirectory(directoryId) {
+//   try {
+//     // Find the directory by its ID
+//     const directory = await Directory.findById(directoryId);
 
-    if (!directory) {
-      throw new Error("Directory not found");
-    }
+//     if (!directory) {
+//       throw new Error("Directory not found");
+//     }
 
-    // Find all the subdirectories in the directory
-    const subdirectories = await Directory.find({
-      parentDirectory: directoryId,
-    });
+//     // Find all the subdirectories in the directory
+//     const subdirectories = await Directory.find({
+//       parentDirectory: directoryId,
+//     });
 
-    const sortedDirs = subdirectories.sort((a, b) => {
-      return (
-        directory.subdirectories.indexOf(a._id.toString()) -
-        directory.subdirectories.indexOf(b._id.toString())
-      );
-    });
-    const subdirectoryData = [];
+//     const sortedDirs = subdirectories.sort((a, b) => {
+//       return (
+//         directory.subdirectories.indexOf(a._id.toString()) -
+//         directory.subdirectories.indexOf(b._id.toString())
+//       );
+//     });
+//     const subdirectoryData = [];
 
-    // Iterate through each subdirectory and count its child subdirectories
-    for (const subdirectory of sortedDirs) {
-      const childSubdirectoriesCount = await Directory.countDocuments({
-        parentDirectory: subdirectory._id,
-      });
+//     // Iterate through each subdirectory and count its child subdirectories
+//     for (const subdirectory of sortedDirs) {
+//       const childSubdirectoriesCount = await Directory.countDocuments({
+//         parentDirectory: subdirectory._id,
+//       });
 
-      subdirectoryData.push({
-        _id: subdirectory._id,
-        name: subdirectory.name,
-        numberOfSubdirectories: childSubdirectoriesCount,
-        numberOfQuizzes: subdirectory.quizzes.length,
-      });
-    }
+//       subdirectoryData.push({
+//         _id: subdirectory._id,
+//         name: subdirectory.name,
+//         numberOfSubdirectories: childSubdirectoriesCount,
+//         numberOfQuizzes: subdirectory.quizzes.length,
+//       });
+//     }
 
-    // Find all the quizzes in the directory
-    const quizzes = await Quiz.find({ parentDirectory: directoryId });
+//     // Find all the quizzes in the directory
+//     const quizzes = await Quiz.find({ parentDirectory: directoryId });
 
-    // Sort quizzes based on the new order in directory.quizzes
-    const sortedQuizzes = quizzes.sort((a, b) => {
-      return (
-        directory.quizzes.indexOf(a._id.toString()) -
-        directory.quizzes.indexOf(b._id.toString())
-      );
-    });
+//     // Sort quizzes based on the new order in directory.quizzes
+//     const sortedQuizzes = quizzes.sort((a, b) => {
+//       return (
+//         directory.quizzes.indexOf(a._id.toString()) -
+//         directory.quizzes.indexOf(b._id.toString())
+//       );
+//     });
 
-    const quizData = sortedQuizzes.map((quiz) => ({
-      _id: quiz._id,
-      quizTitle: quiz.quizTitle,
-      numberOfQuestions: quiz.questions.length,
-      numberOfCorrectQuestions: 0, // Placeholder value to be updated below
-    }));
+//     const quizData = sortedQuizzes.map((quiz) => ({
+//       _id: quiz._id,
+//       quizTitle: quiz.quizTitle,
+//       numberOfQuestions: quiz.questions.length,
+//       numberOfCorrectQuestions: 0, // Placeholder value to be updated below
+//     }));
 
-    // Return the structured data
-    return {
-      directory: {
-        _id: directory._id,
-        name: directory.name,
-      },
-      subdirectories: subdirectoryData,
-      quizzes: quizData,
-    };
-  } catch (error) {
-    throw error; // Throw the error for the caller to handle
-  }
-}
+//     // Return the structured data
+//     return {
+//       directory: {
+//         _id: directory._id,
+//         name: directory.name,
+//       },
+//       subdirectories: subdirectoryData,
+//       quizzes: quizData,
+//     };
+//   } catch (error) {
+//     throw error; // Throw the error for the caller to handle
+//   }
+// }
 
 // TODO: Delete quiz by its ID
 function deleteQuiz(quizId) {

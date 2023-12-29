@@ -1,4 +1,3 @@
-
 const { Tiktoken } = require("@dqbd/tiktoken/lite");
 const cl100k_base = require("@dqbd/tiktoken/encoders/cl100k_base.json");
 
@@ -18,7 +17,7 @@ function countTokens(prompt, model = "gpt2") {
   encoding.free();
   return tokens.length;
 }
-const mockData = true;
+const mockData = false;
 
 function truncateStringByToken(quizTopic, max_tokens) {
   const MAXINPUTTOKENS = max_tokens / 2;
@@ -79,9 +78,9 @@ function generatePrompt(studyContent, questionCount) {
 `;
 }
 
-function generateSndPrompt(studyContent, questionCount) {
+function generateSndPrompt(quizTopic, studyContent, questionCount) {
   return `
-    Generate ${questionCount} additional multiple-choice questions based on the following content:
+    Generate ${questionCount} additional multiple-choice questions for the quiz on ${quizTopic}. Consider the following content:
 
     ${studyContent}.
 
@@ -103,6 +102,8 @@ function generateSndPrompt(studyContent, questionCount) {
         ...
       ]
     }
+
+    Note: Consider the quizTitle "${quizTopic}" when generating questions to maintain context.
   `;
 }
 
@@ -116,16 +117,7 @@ async function generateQuiz(quizTopic, questionCount = 10) {
     questionCount / 2
   );
 
-  const sndPrompt = generateSndPrompt(
-    quizTopic.substring(
-      lstPrdIdxTrncStr + 1,
-      quizTopic.length,
-      questionCount / 2
-    )
-  );
-
   console.log("first prompt: " + firstPrompt);
-  console.log("\nsecond prompt: " + sndPrompt);
 
   let messages = [{ role: "user", content: firstPrompt }];
   let firstResponse;
@@ -177,6 +169,16 @@ async function generateQuiz(quizTopic, questionCount = 10) {
   console.log("first Response!: " + firstResponse);
 
   console.log("finished first Completion");
+
+  const sndPrompt = generateSndPrompt(
+    frstResponseJSON.quizTitle,
+    quizTopic.substring(
+      lstPrdIdxTrncStr + 1,
+      quizTopic.length,
+      questionCount / 2
+    )
+  );
+  console.log("\nsecond prompt: " + sndPrompt);
 
   let sndCompletionText;
 

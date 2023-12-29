@@ -1,87 +1,82 @@
-// app.post("/api/user/register", (req, res) => {
-//   userService
-//     .registerUser(req.body)
-//     .then((msg) => {
-//       res.json({ message: msg });
-//     })
-//     .catch((msg) => {
-//       res.status(422).json({ message: msg });
-//     });
-// });
+const express = require("express");
+const router = express.Router();
+const fs = require("fs"); // File system module
+const { ensureAuthenticated } = require("../config/auth");
+const jwt = require("jsonwebtoken");
+const userService = require("../controllers/user.controller.js");
+const passport = require("passport");
+// const User = require("../models/user.model.js");
 
-// app.post("/api/user/login", (req, res) => {
-//   userService
-//     .checkUser(req.body)
-//     .then((user) => {
-//       res.json({ message: "login successful" });
-//     })
-//     .catch((msg) => {
-//       res.status(422).json({ message: msg });
-//     });
-// });
+const db = require("../models/index"); // retrieve mongo connection
 
-// app.get("/api/user/favourites", (req, res) => {
-//   userService
-//     .getFavourites(req.user._id)
-//     .then((data) => {
-//       res.json(data);
-//     })
-//     .catch((msg) => {
-//       res.status(422).json({ error: msg });
-//     });
-// });
+let User = db.mongoose.connection.model(
+  "User",
+  require("../models/user.model")
+);
+// Define your routes here
 
-// app.put("/api/user/favourites/:id", (req, res) => {
-//   userService
-//     .addFavourite(req.user._id, req.params.id)
-//     .then((data) => {
-//       res.json(data);
-//     })
-//     .catch((msg) => {
-//       res.status(422).json({ error: msg });
-//     });
-// });
+// home route
+router.get("/", (req, res) => res.send("User route"));
 
-// app.delete("/api/user/favourites/:id", (req, res) => {
-//   userService
-//     .removeFavourite(req.user._id, req.params.id)
-//     .then((data) => {
-//       res.json(data);
-//     })
-//     .catch((msg) => {
-//       res.status(422).json({ error: msg });
-//     });
-// });
+// Create a new user
+router.post("/register", userService.createUser);
 
-// app.get("/api/user/history", (req, res) => {
-//   userService
-//     .getHistory(req.user._id)
-//     .then((data) => {
-//       res.json(data);
-//     })
-//     .catch((msg) => {
-//       res.status(422).json({ error: msg });
-//     });
-// });
+// Login route
+router.post("/login", userService.loginUser);
 
-// app.put("/api/user/history/:id", (req, res) => {
-//   userService
-//     .addHistory(req.user._id, req.params.id)
-//     .then((data) => {
-//       res.json(data);
-//     })
-//     .catch((msg) => {
-//       res.status(422).json({ error: msg });
-//     });
-// });
+// Middleware to verify token
+const verifyToken = async (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    return res.status(401).send("No token provided");
+  }
 
-// app.delete("/api/user/history/:id", (req, res) => {
-//   userService
-//     .removeHistory(req.user._id, req.params.id)
-//     .then((data) => {
-//       res.json(data);
-//     })
-//     .catch((msg) => {
-//       res.status(422).json({ error: msg });
-//     });
-// });
+  const token = authHeader.split(" ")[1]; // Assuming the header format is "Bearer [token]"
+  if (!token) {
+    return res.status(401).send("Unauthorized: No token provided");
+  }
+
+  try {
+    const decoded = jwt.verify(token, "your_secret_key"); // Ensure this key matches the one used in /login
+    const user = await User.findById(decoded._id);
+    if (!user) {
+      return res.status(401).send("Unauthorized: Invalid token");
+    }
+    req.user = user;
+    next();
+  } catch (error) {
+    res.status(401).send("Unauthorized: Invalid token: " + error);
+  }
+};
+
+// Route to identify the user
+// Dashboard Route
+router.get("/dashboard", verifyToken, (req, res) => {
+  if (!req.user) {
+    return res.status(401).send("Unauthorized");
+  }
+  res.send(`Hello ${req.user.userName}`);
+});
+
+// Logout Handle
+router.get("/logout", (req, res) => {
+  req.logout((err) => {
+    if (err) {
+      console.error(err);
+      return res.redirect("/"); // Handle error by redirecting to a different page
+    }
+
+    // req.flash("success_msg", "You are logged out");
+    res.redirect("/login");
+  });
+});
+
+// router.get("/dashboard", ensureAuthenticated, (req, res) =>
+//   res.render("dashboard", {
+//     name: req.user.userName,
+//   })
+// );
+
+// Other user routes...
+
+module.exports = router;

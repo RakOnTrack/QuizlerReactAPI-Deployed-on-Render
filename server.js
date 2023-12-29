@@ -6,6 +6,29 @@ require("dotenv").config();
 const db = require("./models");
 const quizRoutes = require("./routes/quiz.routes.js");
 const directoryRoutes = require("./routes/directory.routes.js");
+const userRoutes = require("./routes/user.routes.js");
+const session = require("express-session");
+const passport = require("passport");
+
+
+// Passport config
+require("./config/passport")(passport);
+
+
+// express session
+app.use(
+  session({
+    secret: "secret",
+    resave: true,
+    saveUninitialized: true,
+  })
+)
+
+// Passport middleware
+app.use(passport.initialize());
+app.use(passport.session());
+
+
 
 app.use(cors()); // go through cors policy for requests
 
@@ -20,6 +43,7 @@ app.get("/", (req, res) => {
 
 app.use("/api/quizzes", quizRoutes);
 app.use("/api/directory", directoryRoutes);
+app.use("/api/users", userRoutes);
 //require("./routes/user.routes")(app);
 
 const HTTP_PORT = process.env.PORT || 8080;

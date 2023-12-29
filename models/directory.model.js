@@ -21,6 +21,10 @@ const directorySchema = new mongoose.Schema({
     ref: "Directory",
     default: process.env.DEFAULT_ROOT_DIRECTORY, // Set the default value to homeroute for no parent directory
   },
+  owner: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+  },
 });
 
 module.exports = directorySchema;

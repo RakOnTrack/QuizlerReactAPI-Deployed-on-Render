@@ -1,37 +1,119 @@
 const bcrypt = require("bcryptjs");
-const models = require("../models");
+const jwt = require("jsonwebtoken");
+const directoryService = require("../controllers/directory.controller.js");
 
-let User = models.userSchema;
+const passport = require("passport");
+const passportJWT = require("passport-jwt");
+const db = require("../models/index"); // retrieve mongo connection
+let User = db.mongoose.connection.model(
+  "User",
+  require("../models/user.model")
+);
+
+// JWT Options - ensure these are securely configured and imported
+const jwtOptions = {
+  secretOrKey: process.env.JWT_SECRET, // Use an environment variable for the secret key
+};
+
+// let User = models.userSchema;
+
 
 // Create a new user
-module.exports.registerUser = function (userData) {
-  return new Promise(function (resolve, reject) {
-    if (userData.password != userData.password2) {
-      reject("Passwords do not match");
-    } else {
-      bcrypt
-        .hash(userData.password, 10)
-        .then((hash) => {
-          userData.password = hash;
-
-          let newUser = new User(userData);
-
-          newUser
-            .save()
-            .then(() => {
-              resolve("User " + userData.userName + " successfully registered");
-            })
-            .catch((err) => {
-              if (err.code == 11000) {
-                reject("User Name already taken");
-              } else {
-                reject("There was an error creating the user: " + err);
-              }
-            });
-        })
-        .catch((err) => reject(err));
+module.exports.createUser = async (req, res) => {
+  // .catch((err) => reject(err));
+  let { name, password, password2 } = req.body;
+  try {
+    // Check if values are valid
+    if (!name || !password) {
+      res.status(400).json({ error: "Invalid values" });
+      return;
     }
-  });
+
+    if (password.length < 6) {
+      res.status(400).json({ error: "Password must be at least 6 characters" });
+    }
+
+    // Check if user exists
+    const user = await User.findOne({ userName: name });
+
+    if (user) {
+      res.status(400).json({ error: "User already exists" });
+      return;
+    }
+
+    if (password != password2) {
+      res.status(400).json({ error: "Passwords do not match" });
+    } else {
+      // Create new user
+      // });
+      // var salt = bcrypt.genSalt(10, (err, salt));
+      var salt = await bcrypt.genSalt(10).catch((err) => console.error(err));
+
+      // console.log("Generated salt:", salt);
+      const hash = await bcrypt.hash(password, salt);
+      // password = hash;
+
+      req.body.isRoot = true; // Add isRoot property to req object
+      const rootDir = await directoryService.createDirectory(req, res);
+
+      let newUser = new User({
+        userName: name,
+        password: hash,
+        rootDir: rootDir._id,
+      });
+      // console.log(newUser);
+      newUser.save();
+      res.send("User " + newUser.userName + " successfully registered");
+    }
+  } catch (err) {
+    if (err.code == 11000) {
+      res.send("User Name already taken");
+    } else {
+      res.send("There was an error creating the user: " + err);
+    }
+    // });
+  }
+};
+
+// let jwtOptions = {
+//   jwtFromRequest: ExtractJwt.fromAuthHeaderWithScheme("jwt"),
+//   secretOrKey: "your_secret_key",
+// };
+
+// Login user
+module.exports.loginUser = async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    // Find the user by username
+    const user = await User.findOne({ userName: username });
+    if (!user) {
+      return res.status(401).json({ message: "Invalid username or password" });
+    }
+
+    // Check if the password is correct
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ message: "Invalid username or password" });
+    }
+
+    // Prepare JWT payload
+    const payload = {
+      _id: user._id,
+      userName: user.userName,
+      rootDir: user.rootDir, // Assuming this is the correct field
+    };
+
+    // Sign the JWT token
+    const token = jwt.sign(payload, jwtOptions.secretOrKey, {
+      expiresIn: "1h",
+    });
+
+    res.json({ message: "Login successful", token });
+  } catch (error) {
+    console.error("Error in loginUser:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
 };
 
 // Check if user exists
