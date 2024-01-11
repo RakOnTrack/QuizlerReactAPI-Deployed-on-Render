@@ -477,6 +477,7 @@ exports.moveQuiz = async (req, res) => {
     if (req.user) {
       return res.status(200).json({ message: "succesfully moved quiz" });
     }
+    res.status(200).json({ message: "succesfully moved quiz" });
   } catch (error) {
     res.status(401).json({ error: error });
   }

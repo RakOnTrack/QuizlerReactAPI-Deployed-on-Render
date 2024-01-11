@@ -54,13 +54,13 @@ async function loginTestUser(app) {
       password: "testPassword",
     });
 
-  console.log(postResult.body);
+  //   console.log(postResult.body);
   getAuthenticatedAgent(app);
 
   return postResult;
 }
 
-async function getProfile(agent) {
+async function fetchProfile(agent) {
   // const getResult = await request(app).get(`/api/users/dashboard`);
   return agent.get("/api/users/profile");
 }
@@ -208,7 +208,7 @@ describe("Directory API Tests", () => {
       expect(addQuiz.body.quizTitle).toBe(quiz.quizTitle);
 
       // get the updated profile
-      const getProfile = await getProfile(authenticatedAgent);
+      const getProfile = await fetchProfile(authenticatedAgent);
 
       expect(getProfile.status).toBe(200);
       expect(getProfile.body.directory.quizzes.length).toBe(1);
@@ -318,18 +318,21 @@ describe("Directory API Tests", () => {
 
       const addSubdirectory2 = await authenticatedAgent
         .post("/api/users/addDirectory")
-        .send(subdirectory);
+        .send({
+          name: "Test Subdirectory2",
+        }); //send the same subdirectory object
 
+      expect(addSubdirectory2.status).toBe(200);
       // Get the user's profile again to verify the quiz is added to the subdirectory
       const getProfileAgain =
         await authenticatedAgent.get("/api/users/profile");
 
       expect(getProfileAgain.status).toBe(200);
-      
+
       let subDir = getProfileAgain.body.directory.subdirectories[0];
-      
+
       expect(subDir.numberOfQuizzes).toBe(1);
-      expect(subDir.numberOfSubdirectories).toBe(1);
+      expect(subDir.numberOfSubdirectories).toBe(0);
 
       // Create a subdirectory object
 

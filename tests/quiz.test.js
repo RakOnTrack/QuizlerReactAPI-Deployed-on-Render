@@ -186,7 +186,7 @@ describe("Quiz API Tests", () => {
       let id = testQuiz.body._id;
 
       const putResult = await request(app)
-        .put(`/api/quizzes/update/${id}`)
+        .put(`/api/quizzes/saveresults/${id}`)
         .send({
           correctQuestions: [testQuiz.body.questions[0]._id],
         });
@@ -222,7 +222,7 @@ describe("Quiz API Tests", () => {
       expect(testQuiz.body.questions[0].isCorrect).toBe(false);
       // Mark questions as correct
       const markCorrectResult = await request(app)
-        .put(`/api/quizzes/update/${id}`)
+        .put(`/api/quizzes/saveresults/${id}`)
         .send({
           correctQuestions: [testQuiz.body.questions[0]._id],
         });
