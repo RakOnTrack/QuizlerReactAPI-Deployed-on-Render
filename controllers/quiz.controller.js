@@ -5,6 +5,7 @@ require("dotenv").config();
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY, // This is also the default, can be omitted
 });
+const { generateQuiz } = require("./quizGenerator");
 
 let Question = db.mongoose.connection.model(
   "Questions",
@@ -49,15 +50,27 @@ exports.addQuiz = async (req, res) => {
     // Save the quiz into the database
     const savedQuiz = await newestQuiz.save();
 
-    
-    // Add the quiz to a directory by updating the directory's 'quizzes' array
-    await Directory.findByIdAndUpdate(savedQuiz.parentDirectory, {
-      $push: { quizzes: savedQuiz._id },
-    });
+    //allow the quiz to have no directory.
+    if (!process.env.NODE_ENV != "test" && directoryId != null) {
+      // return res.status(200).json(savedDirectory);
+      // Find and update the directory to add the quiz ID to the 'quizzes' array
+      const directory = await Directory.findById(savedQuiz.parentDirectory);
+
+      if (!directory) {
+        res.status(404).json({ error: "Directory not found" });
+        return;
+      }
+
+      directory.quizzes.push(savedQuiz._id);
+
+      // Save the updated directory
+      await directory.save();
+    }
 
     // Get the Quiz ID and return it in the response
-    const quizData = await getQuiz(savedQuiz._id.toString());
-    res.status(200).json(quizData);
+    await exports.getQuiz({ id: savedQuiz._id }, res);
+
+ 
   } catch (err) {
     if (err.code === 11000) {
       res.status(400).json({ error: "Quiz Title already taken" });
@@ -69,6 +82,75 @@ exports.addQuiz = async (req, res) => {
   }
 };
 
+// TODO: eventually we'll have to make a condition where if the quiz has more than 50 questions, it first only add the first half, and then a second half using another call
+
+// Assuming you're inside an asynchronous function or using top-level await in Node.js
+exports.getQuiz = async (req, res) => {
+  try {
+    let quizID = req.id || req.params.id;
+
+    const quiz = await Quiz.findById(quizID)
+      .populate({
+        path: "questions",
+        model: "Questions",
+      })
+      .exec();
+
+    if (quiz) {
+      // Send response here
+      res.status(200).json(quiz);
+    } else {
+      // Send response here
+      res.status(404).json({ error: `Quiz with ID ${quizID} does not exist` });
+    }
+  } catch (error) {
+    // Handle any errors that occurred during the asynchronous operations
+    // console.error("An error occurred:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+// FIXME: Need to fix - Add a new quiz using AI
+exports.addQuizWithAI = async function (req, res) {
+  // return new Promise(async (resolve, reject) => {
+  // Return a promise
+  const { quizTopic, questionCount, directoryId } = req;
+
+  console.error(quizTopic);
+
+  try {
+    if (!quizTopic || quizTopic.trim().length === 0) {
+      return reject({
+        status: 400,
+        error: "Please provide a valid quiz topic.",
+      });
+    }
+
+    //can work with 6k TOKENS! :)
+    const generatedQuiz = await generateQuiz(quizTopic, questionCount);
+
+    // const formattedResponse = JSON.parse(generatedQuiz); // Parse the JSON string
+    generatedQuiz.directoryId =
+      directoryId || process.env.DEFAULT_ROOT_DIRECTORY; // set parentDirectory ()
+
+    // Assuming 'addQuiz' is an asynchronous function that returns a promise
+    let dataArg = {
+      body: generatedQuiz,
+    };
+
+    await exports.addQuiz(dataArg, res);
+    return;
+    // console.log(data);
+    // resolve(data); // Resolve with the retrieved data
+  } catch (error) {
+    console.error(error);
+    reject({
+      status: 500,
+      error: "An error occurred during quiz generation:." + error,
+    });
+  }
+  // });
+};
 
 // add a new quiz and add it to a directory
 exports.addQuizToDir = async (req, res) => {
@@ -92,94 +174,28 @@ exports.addQuizToDir = async (req, res) => {
   }
 };
 
-// FIXME: Need to fix - Add a new quiz using AI
-exports.addQuizWithAI = async function (req) {
-  return new Promise(async (resolve, reject) => {
-    // Return a promise
-    const { quizTopic, questionCount, directoryId } = req;
+// //FIXME: Add details for function
+// function generatePrompt(studyContent, questionCount = 5) {
+//   return `
+//   Make me a multiple-choice quiz with ${questionCount} questions about this content:
 
-    console.error(quizTopic);
+//   ${studyContent}.
 
-    try {
-      if (!quizTopic || quizTopic.trim().length === 0) {
-        return reject({
-          status: 400,
-          error: "Please provide a valid quiz topic.",
-        });
-      }
+//   The quiz should be in this JSON format:
 
-      // Use 'await' here to asynchronously wait for the completion
-      // const completion = await openai.completions.create({
-      //   model: "text-davinci-003",
-      //   prompt: generatePrompt(quizTopic, questionCount),
-      //   temperature: 0.0,
-      //   max_tokens: 800,
-      // });
-
-      const messages = [
-        {
-          role: "system",
-          content:
-            "You need to create a multiple-choice quiz based on the content provided and format it in JSON with one correct answer and a maximum of three incorrect answers for each question.",
-        },
-        {
-          role: "user",
-          content: generatePrompt(quizTopic, questionCount),
-        },
-        // { role: "assistant", content: firstResponse },
-        // { role: "user", content: sndPrompt },
-      ];
-
-      const completion = await openai.chat.completions.create({
-        model: "ft:gpt-3.5-turbo-0613:personal::8GHsfxGO",
-        messages: messages,
-        temperature: 0.0,
-        max_tokens: 800,
-      });
-
-      const completionText = completion.choices[0].message.content;
-      const formattedResponse = JSON.parse(completionText); // Parse the JSON string
-      formattedResponse.parentDirectory =
-        directoryId || process.env.DEFAULT_ROOT_DIRECTORY; // set parentDirectory ()
-
-      // Assuming 'addQuiz' is an asynchronous function that returns a promise
-      const data = await addQuiz(formattedResponse);
-      console.log(data);
-      resolve(data); // Resolve with the retrieved data
-    } catch (error) {
-      console.error(error);
-      reject({
-        status: 500,
-        error: "An error occurred during quiz generation:." + error,
-      });
-    }
-  });
-};
-
-//FIXME: Add details for function
-function generatePrompt(studyContent, questionCount = 5) {
-  return `
-  Make me a multiple-choice quiz with ${questionCount} questions about this content:
-  
-  
-  ${studyContent}. 
-  
-  
-  The quiz should be in this JSON format:
-
-  {
-    "quizTitle": STRING,
-    "questions": [
-      {
-        "questionTitle": "",
-        "correct_answer": "",
-        "incorrect_answers": []
-      },
-      ...
-    ]
-  }
-`;
-}
+//   {
+//     "quizTitle": STRING,
+//     "questions": [
+//       {
+//         "questionTitle": "",
+//         "correct_answer": "",
+//         "incorrect_answers": []
+//       },
+//       ...
+//     ]
+//   }
+// `;
+// }
 
 // ==== Read ====
 
@@ -273,33 +289,6 @@ exports.getQuizzes = (req, res) => {
   }
 };
 
-// TODO: eventually we'll have to make a condition where if the quiz has more than 50 questions, it first only add the first half, and then a second half using another call
-
-// get a single quiz by ID
-exports.getQuiz = (req, res) => {
-  let quizID = req.params.id;
-  Quiz.findById(quizID)
-    .populate({
-      path: "questions",
-      model: "Questions", // Assuming 'Question' is the model name for questions
-    })
-    .exec()
-    .then((quiz) => {
-      if (quiz) {
-        res.status(200).json(quiz);
-      } else {
-        res
-          .status(404)
-          .json({ error: `Quiz with ID ${quizID} does not exist` });
-      }
-    })
-    .catch((err) => {
-      res
-        .status(422)
-        .json({ error: `Quiz with ID ${quizID} could not be found: ${err}` });
-    });
-};
-
 // ==== Update ====
 
 // Rename quiz using ID
@@ -358,10 +347,8 @@ exports.addQuestion = async (req, res) => {
           .exec()
           .then(async () => {
             // Get the updated quiz data using getQuiz function
-            await getQuiz(quizID).then((updatedQuiz) => {
-              // Return the updated quiz
-              res.status(200).json(updatedQuiz);
-            });
+            await exports.getQuiz({ id: quizID }, res);
+            // });
           })
           .catch((err) => {
             res.status(422).json({
@@ -569,28 +556,6 @@ exports.deleteQuestion = (req, res) => {
 
 // ==== INTERNAL FUNCTIONS ====
 
-// get a single quiz.
-function getQuiz(quizID) {
-  return new Promise(function (resolve, reject) {
-    Quiz.findById(quizID)
-      .populate({
-        path: "questions",
-        model: "Questions", // Assuming 'Question' is the model name for questions
-      })
-      .exec()
-      .then((quiz) => {
-        if (quiz) {
-          resolve(quiz);
-        } else {
-          reject(`Quiz with ID ${quizID} not found`);
-        }
-      })
-      .catch((err) => {
-        reject(`Unable to retrieve quiz: ${err}`);
-      });
-  });
-}
-
 // Get all the quizzes
 function getQuizzes() {
   return new Promise(function (resolve, reject) {
@@ -627,50 +592,5 @@ function getQuizzes() {
       .catch((err) => {
         reject(`Unable to retrieve quizzes: ${err}`);
       });
-  });
-}
-
-function addQuiz(quizData) {
-  return new Promise(function (resolve, reject) {
-    const { quizTitle, questions, parentDirectory } = quizData;
-
-    if (!quizTitle || !questions) {
-      reject("quizTitle, questions, or directoryId not valid.");
-    } else {
-      Question.insertMany(questions)
-        .then((insertedQuestions) => {
-          const questionIds = insertedQuestions.map((question) => question._id);
-          let newestQuiz = new Quiz({
-            quizTitle,
-            questions: questionIds,
-          });
-          // we need to do it this way because if directoryID isnt defined, then it needs to become the default value, set by the schema
-
-          newestQuiz.parentDirectory =
-            parentDirectory || process.env.DEFAULT_ROOT_DIRECTORY;
-
-          return newestQuiz.save();
-        })
-        .then((savedQuiz) => {
-          // Store the _id of the newly created quiz
-
-          // Add the new quiz's _id to the directory's quizzes array
-          return Directory.findByIdAndUpdate(savedQuiz.directory, {
-            $push: { quizzes: savedQuiz._id },
-          }).then(() => {
-            return getQuiz(savedQuiz._id); // Call getQuiz with the newly saved quiz ID
-          });
-        })
-        .then((retrievedQuiz) => {
-          resolve(retrievedQuiz); // Resolve with the retrieved quiz data
-        })
-        .catch((err) => {
-          if (err.code === 11000) {
-            reject("Quiz Title already taken");
-          } else {
-            reject("There was an error creating the quiz: " + err);
-          }
-        });
-    }
   });
 }

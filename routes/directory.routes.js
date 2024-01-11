@@ -1,36 +1,39 @@
 var router = require("express").Router();
 
-const directories = require("../controllers/directory.controller.js");
+const directoryService = require("../controllers/directory.controller.js");
 
 // Create a new directory
-router.post("/", directories.createDirectory
-    // If req.body.parentDirectoryId is falsy, and you want to ensure a default value,
-    // you can explicitly set it to the default here
-    // if (!req.body.parentDirectoryId) {
-    //   req.body.parentDirectoryId = process.env.DEFAULT_ROOT_DIRECTORY;
-    // }
+router.post(
+  "/",
+  directoryService.createDirectory,
+  // If req.body.parentDirectoryId is falsy, and you want to ensure a default value,
+  // you can explicitly set it to the default here
+  // if (!req.body.parentDirectoryId) {
+  //   req.body.parentDirectoryId = process.env.DEFAULT_ROOT_DIRECTORY;
+  // }
 );
 
 // Read directory, going to default root directory
-router.get("/", directories.redirectToRoot);
+// router.get("/", directoryService.redirectToRoot);
 
 // Read directory using its ID
-router.get("/:id", directories.readDirectory);
+router.get("/:id", directoryService.readDirectory);
 
 // Moving a directory
-router.put("/movedir", directories.moveDirectory);
-
-// Route for renaming a directory
-router.put("/rename", directories.renameDirectory);
-
-// Route for switching the order of quizzes and subdirectories
-router.put("/switch-order", directories.switchOrder);
-
-// Route for deleting a directory if it's empty
-router.delete("/", directories.deleteDirectory);
+router.put("/movedir", directoryService.moveDirectory);
 
 // Route for moving a quiz between directories
 // chloe: changed the route call since its more related to directories
-router.put("/moveQuiz", directories.moveQuiz);
+router.put("/moveQuiz", directoryService.moveQuiz);
+
+// Route for renaming a directory
+router.put("/rename", directoryService.renameDirectory);
+
+// Route for switching the order of quizzes and subdirectories
+router.put("/switch-order", directoryService.switchOrder);
+
+// Route for deleting a directory 
+router.delete("/", directoryService.deleteDirectory);
+
 
 module.exports = router;

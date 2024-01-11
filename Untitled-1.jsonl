@@ -1,0 +1,13 @@
+[
+   {
+      "prompt": "Creatdfds    e a Jsava code file for the following code:\n\npublic class GeometricObject {\n  private String color = \"white\";\n  private boolean filled;\n  private java.util.Date dateCreated;\n  \n  /** Construct a default geometric object */\n  public GeometricObject() {\n    dateCreated = new java.util.Date();\n  }\n  /** Construct a geometric object with the specified color \n    *  and filled value */\n  public GeometricObject(String color, boolean filled) {\n    dateCreated = new java.util.Date();\n    this.color = color;\n    this.filled = filled;\n  }\n  /** Return color */\n  public String getColor() {\n    return color;\n  }\n  /** Set a new color */\n  public void setColor(String color) {\n    this.color = color;\n  }",
+      "completion": "\n    private Date dateCreated;\n\n    /** Construct a default geometric object */\n    public GeometricObject() {\n        dateCreated = new Date();\n    }\n\n    /** Construct a geometric object with the specified color\n     *  and filled value */\n    public GeometricObject(String color, boolean filled) {\n        dateCreated = new Date();\n        this.color = color;\n        this.filled = filled;\n    }\n\n    /** Return color */\n    public String getColor() {\n        return color;\n    }\n\n    /** Set a new color */\n    public void setColor(String color) {\n"
+   },
+   {
+      "prompt": "Creatdfds    e a Jsava code file for the following code:\n\npublic class GeometricObject {\n  private String color = \"white\";\n  private boolean filled;\n  private java.util.Date dateCreated;\n  \n  /** Construct a default geometric object */\n  public GeometricObject() {\n    dateCreated = new java.util.Date();\n  }\n  /** Construct a geometric object with the specified color \n    *  and filled value */\n  public GeometricObject(String color, boolean filled) {\n    dateCreated = new java.util.Date();\n    this.color = color;\n    this.filled = filled;\n  }\n  /** Return color */\n  public String getColor() {\n    return color;\n  }\n  /** Set a new color */\n  public void setColor(String color) {\n    this.color = color;\n  }",
+      "completion": "{
+  "goals": 33,
+  "assists": 67
+}"
+   }
+]

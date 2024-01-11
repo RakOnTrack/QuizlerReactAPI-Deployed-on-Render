@@ -13,7 +13,7 @@ function countTokens(prompt, model = "gpt2") {
   const encoding = new Tiktoken(
     cl100k_base.bpe_ranks,
     cl100k_base.special_tokens,
-    cl100k_base.pat_str
+    cl100k_base.pat_str,
   );
 
   // Encode the prompt to count tokens

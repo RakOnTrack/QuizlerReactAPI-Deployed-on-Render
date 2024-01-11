@@ -27,7 +27,7 @@ module.exports.connect = function () {
 const mongoose = require("mongoose");
 mongoose.Promise = global.Promise;
 
-const db = {}
+const db = {};
 db.mongoose = mongoose;
 db.Question = require("../models/question.model.js");
 db.Quiz = require("../models/quiz.model.js");
