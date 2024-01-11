@@ -1,12 +1,13 @@
 const express = require("express");
 const router = express.Router();
 const fs = require("fs"); // File system module
-const { ensureAuthenticated } = require("../config/auth");
+// const { ensureAuthenticated } = require("../config/auth");
 const jwt = require("jsonwebtoken");
 const userService = require("../controllers/user.controller.js");
 const passport = require("passport");
 // const User = require("../models/user.model.js");
-
+const directoryController = require("../controllers/directory.controller.js");
+const quizController = require("../controllers/quiz.controller.js");
 const db = require("../models/index"); // retrieve mongo connection
 
 let User = db.mongoose.connection.model(
@@ -66,16 +67,71 @@ router.get("/logout", (req, res) => {
       return res.redirect("/"); // Handle error by redirecting to a different page
     }
 
-    // req.flash("success_msg", "You are logged out");
     res.redirect("/login");
   });
 });
 
-// router.get("/dashboard", ensureAuthenticated, (req, res) =>
-//   res.render("dashboard", {
-//     name: req.user.userName,
-//   })
-// );
+// profile
+router.get("/profile", verifyToken, userService.getUserProfile);
+router.delete("/delete", verifyToken, userService.deleteUserAccount);
+
+// quizzes
+// Route to add a new quiz to the user's root directory
+router.post("/addQuiz", verifyToken, (req, res) => {
+  // Set the directoryId to the user's rootDir before calling addQuiz
+  req.body.directoryId = req.body.directoryId || req.user.rootDir._id;
+  quizController.addQuiz(req, res);
+});
+
+// Route to add a directory to the user's root directory
+router.post("/addDirectory", verifyToken, (req, res) => {
+  // Set the parentId to the user's rootDir before calling addDirectory
+  req.body.parentDirectoryId = req.user.rootDir._id || req.body.parentId;
+  directoryController.createDirectory(req, res);
+});
+
+// Route to read the user's root directory
+router.get("/readDirectory", verifyToken, (req, res) => {
+  // Set req.params.id to be the user's rootDir
+  req.params.id = req.user.rootDir;
+  directoryController.readDirectory(req, res);
+});
+router.put("/quiz/:quizId/update", verifyToken, userService.updateQuiz);
+router.get("/quiz/:quizId", verifyToken, userService.getQuizDetails);
+
+// directories
+router.put(
+  "/directory/:directoryId/update",
+  verifyToken,
+  userService.updateDirectory
+);
+router.delete(
+  "/directory/:directoryId/delete",
+  verifyToken,
+  userService.deleteDirectory
+);
+router.get(
+  "/directory/:directoryId/subdirectories",
+  verifyToken,
+  userService.listSubdirectories
+);
+
+// Route to move a quiz from one directory to another
+router.put("/moveQuiz", verifyToken, (req, res) => {
+  // const {  } = req.body.quizId;
+  const { quizId, newDirectoryId } = req.body;
+
+  // Move the quiz to the destination directory
+  directoryController
+    .moveQuiz(req, res)
+    .then(() => {
+      return;
+      // res.status(200).json({ message: "Quiz moved successfully" });
+    })
+    .catch((error) => {
+      res.status(500).json({ error: "Failed to move quiz: " + error });
+    });
+});
 
 // Other user routes...
 

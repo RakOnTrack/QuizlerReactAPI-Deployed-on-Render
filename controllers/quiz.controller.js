@@ -70,31 +70,7 @@ exports.addQuiz = async (req, res) => {
     // Get the Quiz ID and return it in the response
     await exports.getQuiz({ id: savedQuiz._id }, res);
 
-    // try {
-    //   const quiz = await Quiz.findById(savedQuiz._id)
-    //     .populate({
-    //       path: "questions",
-    //       model: "Questions",
-    //     })
-    //     .exec();
-
-    //   if (quiz) {
-    //     // Send response here
-    //     console.log("sent once");
-    //     res.status(200).json(quiz);
-    //   } else {
-    //     // Send response here
-    //     console.log("sent twice");
-    //     res
-    //       .status(404)
-    //       .json({ error: `Quiz with ID ${quizID} does not exist` });
-    //   }
-    // } catch (error) {
-    //   // Handle any errors that occurred during the asynchronous operations
-    //   console.error("An error occurred:", error);
-    //   res.status(500).json({ error: "Internal Server Error" });
-    // }
-    // res.status(200).json(quizData);
+ 
   } catch (err) {
     if (err.code === 11000) {
       res.status(400).json({ error: "Quiz Title already taken" });

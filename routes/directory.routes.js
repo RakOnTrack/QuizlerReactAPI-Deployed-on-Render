@@ -14,7 +14,7 @@ router.post(
 );
 
 // Read directory, going to default root directory
-router.get("/", directoryService.redirectToRoot);
+// router.get("/", directoryService.redirectToRoot);
 
 // Read directory using its ID
 router.get("/:id", directoryService.readDirectory);
@@ -22,17 +22,18 @@ router.get("/:id", directoryService.readDirectory);
 // Moving a directory
 router.put("/movedir", directoryService.moveDirectory);
 
+// Route for moving a quiz between directories
+// chloe: changed the route call since its more related to directories
+router.put("/moveQuiz", directoryService.moveQuiz);
+
 // Route for renaming a directory
 router.put("/rename", directoryService.renameDirectory);
 
 // Route for switching the order of quizzes and subdirectories
 router.put("/switch-order", directoryService.switchOrder);
 
-// Route for deleting a directory if it's empty
+// Route for deleting a directory 
 router.delete("/", directoryService.deleteDirectory);
 
-// Route for moving a quiz between directories
-// chloe: changed the route call since its more related to directories
-router.put("/moveQuiz", directoryService.moveQuiz);
 
 module.exports = router;

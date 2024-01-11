@@ -5,10 +5,12 @@ const directoryService = require("../controllers/directory.controller.js");
 const passport = require("passport");
 const passportJWT = require("passport-jwt");
 const db = require("../models/index"); // retrieve mongo connection
+const directoryController = require("./directory.controller.js");
 let User = db.mongoose.connection.model(
   "User",
   require("../models/user.model")
 );
+const { createDirectory } = directoryController;
 
 // JWT Options - ensure these are securely configured and imported
 const jwtOptions = {
@@ -17,14 +19,13 @@ const jwtOptions = {
 
 // let User = models.userSchema;
 
-
 // Create a new user
 module.exports.createUser = async (req, res) => {
   // .catch((err) => reject(err));
-  let { name, password, password2 } = req.body;
+  let { username, password, password2 } = req.body;
   try {
     // Check if values are valid
-    if (!name || !password) {
+    if (!username || !password) {
       res.status(400).json({ error: "Invalid values" });
       return;
     }
@@ -34,7 +35,7 @@ module.exports.createUser = async (req, res) => {
     }
 
     // Check if user exists
-    const user = await User.findOne({ userName: name });
+    const user = await User.findOne({ userName: username });
 
     if (user) {
       res.status(400).json({ error: "User already exists" });
@@ -57,7 +58,7 @@ module.exports.createUser = async (req, res) => {
       const rootDir = await directoryService.createDirectory(req, res);
 
       let newUser = new User({
-        userName: name,
+        userName: username,
         password: hash,
         rootDir: rootDir._id,
       });
@@ -104,12 +105,12 @@ module.exports.loginUser = async (req, res) => {
       rootDir: user.rootDir, // Assuming this is the correct field
     };
 
-    // Sign the JWT token
+    // Sign the JWT token with expiration of 30 days
     const token = jwt.sign(payload, jwtOptions.secretOrKey, {
-      expiresIn: "1h",
+      expiresIn: "30d",
     });
 
-    res.json({ message: "Login successful", token });
+    res.json({ token });
   } catch (error) {
     console.error("Error in loginUser:", error);
     res.status(500).json({ message: "Internal Server Error" });
@@ -117,118 +118,130 @@ module.exports.loginUser = async (req, res) => {
 };
 
 // Check if user exists
-module.exports.checkUser = function (userData) {
-  return new Promise(function (resolve, reject) {
-    User.findOne({ userName: userData.userName })
-      .exec()
-      .then((user) => {
-        bcrypt.compare(userData.password, user.password).then((res) => {
-          if (res === true) {
-            resolve(user);
-          } else {
-            reject("Incorrect password for user " + userData.userName);
-          }
-        });
-      })
-      .catch((err) => {
-        reject("Unable to find user " + userData.userName);
-      });
-  });
+// module.exports.checkUser = function (userData) {
+//   return new Promise(function (resolve, reject) {
+//     User.findOne({ userName: userData.userName })
+//       .exec()
+//       .then((user) => {
+//         bcrypt.compare(userData.password, user.password).then((res) => {
+//           if (res === true) {
+//             resolve(user);
+//           } else {
+//             reject("Incorrect password for user " + userData.userName);
+//           }
+//         });
+//       })
+//       .catch((err) => {
+//         reject("Unable to find user " + userData.userName);
+//       });
+//   });
+// };
+
+module.exports.getUserProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select("-password");
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    req.body.directoryId = user.rootDir;
+    req.user = user;
+    // Assuming the user has a 'rootDir' property
+    const directoryData = await directoryController.readDirectory(req, res);
+
+    if (!directoryData) {
+      return res.status(404).json({ message: "Root directory not found" });
+    }
+    const combinedData = {
+      user: user,
+      directory: directoryData,
+    };
+
+    res.json(combinedData);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };
 
-// module.exports.getFavourites = function (id) {
-//     return new Promise(function (resolve, reject) {
+module.exports.deleteUserAccount = async (req, res) => {
+  try {
+    await User.findByIdAndDelete(req.user._id);
+    res.json({ message: "User account deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
-//         User.findById(id)
-//             .exec()
-//             .then(user => {
-//                 resolve(user.favourites)
-//             }).catch(err => {
-//                 reject(`Unable to get favourites for user with id: ${id}`);
-//             });
-//     });
-// }
+module.exports.getQuizzesInDirectory = async (req, res) => {
+  try {
+    const directoryId = req.params.directoryId;
+    const quizzes = await Quiz.find({ parentDirectory: directoryId });
+    res.json(quizzes);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
-// module.exports.addFavourite = function (id, favId) {
+module.exports.updateQuiz = async (req, res) => {
+  try {
+    const quizId = req.params.quizId;
+    const updatedData = req.body;
+    const updatedQuiz = await Quiz.findByIdAndUpdate(quizId, updatedData, {
+      new: true,
+    });
+    res.json(updatedQuiz);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
-//     return new Promise(function (resolve, reject) {
+module.exports.getQuizDetails = async (req, res) => {
+  try {
+    const quizId = req.params.quizId;
+    const quiz = await Quiz.findById(quizId);
+    if (!quiz) {
+      return res.status(404).json({ message: "Quiz not found" });
+    }
+    res.json(quiz);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
-//         User.findById(id).exec().then(user => {
-//             if (user.favourites.length < 50) {
-//                 User.findByIdAndUpdate(id,
-//                     { $addToSet: { favourites: favId } },
-//                     { new: true }
-//                 ).exec()
-//                     .then(user => { resolve(user.favourites); })
-//                     .catch(err => { reject(`Unable to update favourites for user with id: ${id}`); })
-//             } else {
-//                 reject(`Unable to update favourites for user with id: ${id}`);
-//             }
+exports.updateDirectory = async (req, res) => {
+  try {
+    const directoryId = req.params.directoryId;
+    const updatedData = req.body;
+    const updatedDirectory = await Directory.findByIdAndUpdate(
+      directoryId,
+      updatedData,
+      { new: true }
+    );
+    res.json(updatedDirectory);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
-//         })
+exports.deleteDirectory = async (req, res) => {
+  try {
+    const directoryId = req.params.directoryId;
+    await Directory.findByIdAndDelete(directoryId);
+    await Quiz.deleteMany({ parentDirectory: directoryId });
+    res.json({ message: "Directory deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
-//     });
-
-// }
-
-// module.exports.removeFavourite = function (id, favId) {
-//     return new Promise(function (resolve, reject) {
-//         User.findByIdAndUpdate(id,
-//             { $pull: { favourites: favId } },
-//             { new: true }
-//         ).exec()
-//             .then(user => {
-//                 resolve(user.favourites);
-//             })
-//             .catch(err => {
-//                 reject(`Unable to update favourites for user with id: ${id}`);
-//             })
-//     });
-// }
-
-// module.exports.getHistory = function (id) {
-//     return new Promise(function (resolve, reject) {
-
-//         User.findById(id)
-//             .exec()
-//             .then(user => {
-//                 resolve(user.history)
-//             }).catch(err => {
-//                 reject(`Unable to get history for user with id: ${id}`);
-//             });
-//     });
-// }
-
-// module.exports.addHistory = function (id, historyId) {
-
-//     return new Promise(function (resolve, reject) {
-
-//         User.findById(id).exec().then(user => {
-//             if (user.favourites.length < 50) {
-//                 User.findByIdAndUpdate(id,
-//                     { $addToSet: { history: historyId } },
-//                     { new: true }
-//                 ).exec()
-//                     .then(user => { resolve(user.history); })
-//                     .catch(err => { reject(`Unable to update history for user with id: ${id}`); })
-//             } else {
-//                 reject(`Unable to update history for user with id: ${id}`);
-//             }
-//         })
-//     });
-// }
-
-// module.exports.removeHistory = function (id, historyId) {
-//     return new Promise(function (resolve, reject) {
-//         User.findByIdAndUpdate(id,
-//             { $pull: { history: historyId } },
-//             { new: true }
-//         ).exec()
-//             .then(user => {
-//                 resolve(user.history);
-//             })
-//             .catch(err => {
-//                 reject(`Unable to update history for user with id: ${id}`);
-//             })
-//     });
-// }
+exports.listSubdirectories = async (req, res) => {
+  try {
+    const directoryId = req.params.directoryId;
+    const subdirectories = await Directory.find({
+      parentDirectory: directoryId,
+    });
+    res.json(subdirectories);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

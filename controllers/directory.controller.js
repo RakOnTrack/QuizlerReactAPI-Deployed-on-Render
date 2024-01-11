@@ -29,7 +29,7 @@ exports.createDirectory = async (req, res) => {
   // let parentDirectoryId =  req.body.parentDirectoryId || process.env.DEFAULT_ROOT_DIRECTORY;
 
   try {
-    if (!name) {
+    if (!name && !isRoot) {
       return res
         .status(400)
         .json({ error: "Please enter a name for the directory" });
@@ -94,17 +94,17 @@ exports.createDirectory = async (req, res) => {
 //     res.status(401).json({ error: "Error creating directory: " + error });
 //   }
 // };
-exports.redirectToRoot = async (req, res) => {
-  let defaultRootId = process.env.DEFAULT_ROOT_DIRECTORY;
+// exports.redirectToRoot = async (req, res) => {
+//   let defaultRootId = process.env.DEFAULT_ROOT_DIRECTORY;
 
-  // Redirect to the readDirectory function with the default root _id
-  req.params.id = defaultRootId;
-  await exports.readDirectory(req, res);
-};
+//   // Redirect to the readDirectory function with the default root _id
+//   req.params.id = defaultRootId;
+//   await exports.readDirectory(req, res);
+// };
 
 // Reading a directory and its items using its ID
 exports.readDirectory = async (req, res) => {
-  let directoryId = req.params.id;
+  let directoryId = req.params.id || req.body.directoryId || null;
 
   try {
     // Find the directory by its ID
@@ -202,6 +202,9 @@ exports.readDirectory = async (req, res) => {
     }
 
     // Return the structured data
+    if (req.user) {
+      return directory_result;
+    }
     res.status(200).json(directory_result);
   } catch (error) {
     res.status(401).json({ error: "Error creating directory: " + error });
@@ -471,87 +474,10 @@ exports.moveQuiz = async (req, res) => {
     await originalDirectory.save();
     await newDirectory.save();
     await quiz.save();
-
-    // chloe: is this suppose to be empty?
-    res.status(200).json({ message: "succesfully moved quiz" });
+    if (req.user) {
+      return res.status(200).json({ message: "succesfully moved quiz" });
+    }
   } catch (error) {
     res.status(401).json({ error: error });
   }
 };
-
-// ==== INTERNAL FUNCTIONS ====
-
-// Reading a directory and its items
-// async function readDirectory(directoryId) {
-//   try {
-//     // Find the directory by its ID
-//     const directory = await Directory.findById(directoryId);
-
-//     if (!directory) {
-//       throw new Error("Directory not found");
-//     }
-
-//     // Find all the subdirectories in the directory
-//     const subdirectories = await Directory.find({
-//       parentDirectory: directoryId,
-//     });
-
-//     const sortedDirs = subdirectories.sort((a, b) => {
-//       return (
-//         directory.subdirectories.indexOf(a._id.toString()) -
-//         directory.subdirectories.indexOf(b._id.toString())
-//       );
-//     });
-//     const subdirectoryData = [];
-
-//     // Iterate through each subdirectory and count its child subdirectories
-//     for (const subdirectory of sortedDirs) {
-//       const childSubdirectoriesCount = await Directory.countDocuments({
-//         parentDirectory: subdirectory._id,
-//       });
-
-//       subdirectoryData.push({
-//         _id: subdirectory._id,
-//         name: subdirectory.name,
-//         numberOfSubdirectories: childSubdirectoriesCount,
-//         numberOfQuizzes: subdirectory.quizzes.length,
-//       });
-//     }
-
-//     // Find all the quizzes in the directory
-//     const quizzes = await Quiz.find({ parentDirectory: directoryId });
-
-//     // Sort quizzes based on the new order in directory.quizzes
-//     const sortedQuizzes = quizzes.sort((a, b) => {
-//       return (
-//         directory.quizzes.indexOf(a._id.toString()) -
-//         directory.quizzes.indexOf(b._id.toString())
-//       );
-//     });
-
-//     const quizData = sortedQuizzes.map((quiz) => ({
-//       _id: quiz._id,
-//       quizTitle: quiz.quizTitle,
-//       numberOfQuestions: quiz.questions.length,
-//       numberOfCorrectQuestions: 0, // Placeholder value to be updated below
-//     }));
-
-//     // Return the structured data
-//     return {
-//       directory: {
-//         _id: directory._id,
-//         name: directory.name,
-//       },
-//       subdirectories: subdirectoryData,
-//       quizzes: quizData,
-//     };
-//   } catch (error) {
-//     throw error; // Throw the error for the caller to handle
-//   }
-// }
-
-// TODO: Delete quiz by its ID
-function deleteQuiz(quizId) {
-  // console.log("Function not implemented yet");
-  return quizId;
-}

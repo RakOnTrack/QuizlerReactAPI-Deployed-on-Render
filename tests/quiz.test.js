@@ -3,7 +3,7 @@ const request = require("supertest");
 const express = require("express");
 const db = require("./database");
 const quiz_routes = require("../routes/quiz.routes.js");
-
+const { createTestQuiz, updateQuiz } = require("./utils.js");
 const app = express();
 
 // Middleware for parsing JSON request bodies
@@ -17,36 +17,9 @@ app.use("/api/quizzes", quiz_routes);
 
 jest.setTimeout(90000);
 
-async function createTestQuiz(app, name, parentDirectoryId = null) {
-  const postResult = await request(app)
-    .post("/api/quizzes")
-    .send({
-      quizTitle: name,
-      questions: [
-        {
-          questionTitle: "Test Question Title 1",
-          correct_answer: "Correct",
-          incorrect_answers: ["Incorrect 1", "Incorrect 2", "Incorrect 3"],
-        },
-        {
-          questionTitle: "Test Question Title 2",
-          correct_answer: "Correct",
-          incorrect_answers: ["Incorrect 1", "Incorrect 2", "Incorrect 3"],
-        },
-      ],
-      directoryId: parentDirectoryId,
-    });
 
-  if (postResult.status != 200) {
-    throw "err";
-  }
-  return postResult;
-}
 
-async function updateQuiz(app, quiz) {
-  const getResult = await request(app).get(`/api/quizzes/${quiz.body._id}`);
-  return getResult;
-}
+
 
 describe("Quiz API Tests", () => {
   // Connects to the test database before all the tests in this suite

@@ -27,8 +27,7 @@ router.post("/openai", upload.none(), async (req, res) => {
 // Get all quizzes
 router.get("/", quizService.getQuizzes);
 
-// Get all quizzes matching the query
-router.get("", quizService.getQuizzes);
+
 
 // Get specific Quiz by ID
 router.get("/:id", quizService.getQuiz);
@@ -43,7 +42,7 @@ router.put("/question/:id", quizService.addQuestion);
 router.put("/restart/:id", quizService.restartQuiz);
 
 // Update study results for quiz
-router.put("/update/:id", quizService.markQuestionsCorrect);
+router.put("/saveresults/:id", quizService.markQuestionsCorrect);
 
 // Remove quiz using its Id
 router.delete("/:id", quizService.deleteQuiz);

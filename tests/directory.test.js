@@ -1,5 +1,10 @@
 // Test calls for directory API calls
-
+const {
+  createTestDirectory,
+  createTestQuiz,
+  updateDir,
+  updateQuiz,
+} = require("./utils.js");
 const request = require("supertest");
 const express = require("express");
 const db = require("./database.js");
@@ -16,47 +21,6 @@ app.use("/api/directory", directory_routes);
 app.use("/api/quizzes", quiz_routes);
 
 jest.setTimeout(90000);
-
-async function createTestDirectory(app, name, parentDirectoryId = null) {
-  const postResult = await request(app).post("/api/directory").send({
-    name: name,
-    parentDirectoryId: parentDirectoryId,
-  });
-
-  return postResult;
-  // return updateDir(app, postResult.body);
-}
-async function createTestQuiz(app, name, parentDirectoryId = null) {
-  const postResult = await request(app)
-    .post("/api/quizzes")
-    .send({
-      quizTitle: name,
-      questions: [
-        {
-          questionTitle: "Test Question Title 1",
-          correct_answer: "Correct",
-          incorrect_answers: ["Incorrect 1", "Incorrect 2", "Incorrect 3"],
-        },
-        {
-          questionTitle: "Test Question Title 2",
-          correct_answer: "Correct",
-          incorrect_answers: ["Incorrect 1", "Incorrect 2", "Incorrect 3"],
-        },
-      ],
-      directoryId: parentDirectoryId,
-    });
-
-  return postResult;
-}
-
-async function updateDir(app, dir) {
-  const getResult = await request(app).get(`/api/directory/${dir.body._id}`);
-  return getResult;
-}
-async function updateQuiz(app, quiz) {
-  const getResult = await request(app).get(`/api/quizzes/${quiz.body._id}`);
-  return getResult;
-}
 
 describe("Directory API Tests", () => {
   // Connects to the test database before all the tests in this suite
@@ -394,12 +358,19 @@ describe("Directory API Tests", () => {
   // Test Case 8.2: Switch the order with mismatched array lengths
   describe("PUT /api/directory/switch-order", () => {
     it("should return an error with mismatched array lengths", async () => {
+      const mainDir = await createTestDirectory(app, "Quiz Main");
+
+      const quiz1 = await createTestQuiz(app, "Quiz 1", mainDir.body._id);
+      const quiz2 = await createTestQuiz(app, "Quiz 2", mainDir.body._id);
+
+      // const subdirectory1 = await createTestDirectory(
+
       const putResult = await request(app)
         .put("/api/directory/switch-order")
         .send({
-          directoryId: "directoryID",
-          newQuizIdOrder: ["quiz1ID", "quiz2ID"],
-          newSubDirIdOrder: ["subdir1ID"],
+          directoryId: mainDir.body._id,
+          newQuizIdOrder: [quiz1.body._id],
+          newSubDirIdOrder: [],
         });
 
       expect(putResult.status).toBe(401);
@@ -425,6 +396,7 @@ describe("Directory API Tests", () => {
         `/api/quizzes/${quizToDelete.body._id}`
       ); // Use the correct endpoint for deleting a quiz
 
+      expect(deleteResult.status).toBe(200);
       parentDirectory = await updateDir(app, parentDirectory);
       expect(parentDirectory.body.quizzes.length).toBe(0);
 
