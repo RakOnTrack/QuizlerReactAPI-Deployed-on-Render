@@ -32,6 +32,18 @@ exports.addQuiz = async (req, res) => {
       return;
     }
 
+    // Ensure each question in questions has a questionTitle
+    let i = 0;
+    questions.forEach((question) => {
+      if (!question.questionTitle) {
+        res
+          .status(401)
+          .json({ error: "Question #" + i + " doesnt  have a title." });
+        return;
+      }
+      i++;
+    });
+
     // Insert all the questions into the database
     const insertedQuestions = await Question.insertMany(questions);
 
@@ -69,8 +81,6 @@ exports.addQuiz = async (req, res) => {
 
     // Get the Quiz ID and return it in the response
     await exports.getQuiz({ id: savedQuiz._id }, res);
-
- 
   } catch (err) {
     if (err.code === 11000) {
       res.status(400).json({ error: "Quiz Title already taken" });
@@ -87,9 +97,9 @@ exports.addQuiz = async (req, res) => {
 // Assuming you're inside an asynchronous function or using top-level await in Node.js
 exports.getQuiz = async (req, res) => {
   try {
-    let quizID = req.id || req.params.id;
+    let quizId = req.id || req.params.id;
 
-    const quiz = await Quiz.findById(quizID)
+    const quiz = await Quiz.findById(quizId)
       .populate({
         path: "questions",
         model: "Questions",
@@ -101,7 +111,7 @@ exports.getQuiz = async (req, res) => {
       res.status(200).json(quiz);
     } else {
       // Send response here
-      res.status(404).json({ error: `Quiz with ID ${quizID} does not exist` });
+      res.status(404).json({ error: `Quiz with ID ${quizId} does not exist` });
     }
   } catch (error) {
     // Handle any errors that occurred during the asynchronous operations
@@ -293,7 +303,7 @@ exports.getQuizzes = (req, res) => {
 
 // Rename quiz using ID
 exports.renameItem = (req, res) => {
-  let quizID = req.params.id;
+  let quizId = req.params.id;
   let newTitle = req.body.quizTitle;
   if (!newTitle) {
     res.status(400).json({ error: "Content is empty" });
@@ -301,13 +311,13 @@ exports.renameItem = (req, res) => {
   }
 
   // Update the original quiz title
-  Quiz.findByIdAndUpdate(quizID, { quizTitle: newTitle }, { new: true })
+  Quiz.findByIdAndUpdate(quizId, { quizTitle: newTitle }, { new: true })
     .exec()
     .then((updatedQuiz) => {
       if (updatedQuiz) {
         res.status(200).json(updatedQuiz);
       } else {
-        res.status(400).json({ error: `Quiz with ID ${quizID} not found.` });
+        res.status(400).json({ error: `Quiz with ID ${quizId} not found.` });
         return;
       }
     })
@@ -319,20 +329,20 @@ exports.renameItem = (req, res) => {
 
 // Add question to quiz
 exports.addQuestion = async (req, res) => {
-  let quizID = req.params.id;
+  let quizId = req.params.id || req.params.quizId;
   let questionBody = req.body;
 
-  const { questionTitle, correct_answer, incorrect_answers } = questionBody;
+  const { questionTitle, incorrect_answers, correct_answer } = questionBody;
 
-  if (!questionTitle || !correct_answer || !incorrect_answers) {
+  if (!questionTitle || !incorrect_answers || !correct_answer) {
     res.status(422).json({ error: "Invalid question data." });
     return;
   } else {
     // Create the new question document
     const newQuestion = new Question({
       questionTitle,
-      correct_answer,
       incorrect_answers,
+      correct_answer,
     });
 
     await newQuestion
@@ -340,19 +350,19 @@ exports.addQuestion = async (req, res) => {
       .then((savedQuestion) => {
         // Find the quiz by ID and update the questions array
         Quiz.findByIdAndUpdate(
-          quizID,
+          quizId,
           { $push: { questions: savedQuestion._id } },
           { new: true }
         )
           .exec()
           .then(async () => {
             // Get the updated quiz data using getQuiz function
-            await exports.getQuiz({ id: quizID }, res);
+            await exports.getQuiz({ id: quizId }, res);
             // });
           })
           .catch((err) => {
             res.status(422).json({
-              error: `Unable to update questions for quiz with ID: ${quizID}: ${err}`,
+              error: `Unable to update questions for quiz with ID: ${quizId}: ${err}`,
             });
           });
       })
@@ -392,90 +402,75 @@ exports.restartQuiz = (req, res) => {
 };
 
 // Save study results. uses array of question IDs to change specific questions isCorrect to true
-exports.markQuestionsCorrect = (req, res) => {
+exports.markQuestionsCorrect = async (req, res) => {
   let quizID = req.params.id;
   let questionIDs = req.body.correctQuestions;
 
-  // Find the quiz by ID
-  Quiz.findById(quizID)
-    .populate("questions")
-    .exec()
-    .then((quiz) => {
-      if (!quiz) {
-        res.status(422).json({ error: `Quiz with ID ${quizID} not found` });
-        return;
-      }
-      // Update isCorrect value for each question
-      const updatePromises = questionIDs.map((questionID) => {
-        const question = quiz.questions.find((q) => q._id.equals(questionID));
-        if (!question) {
-          return; // Skip if question not found
-        }
-        question.isCorrect = true;
-        return question.save();
-      });
-      // Wait for all question updates to complete
-      // FIXME: chloe - btw this returns an empty object, is it suppose to be like this?
-      res.status(200).json(updatePromises);
-    })
-    .catch((err) => {
-      res
+  try {
+    const quiz = await Quiz.findById(quizID).populate("questions").exec();
+
+    if (!quiz) {
+      return res
         .status(422)
-        .json({ error: `Error marking questions as correct: ${err}` });
-    });
+        .json({ error: `Quiz with ID ${quizID} not found` });
+    }
+
+    for (const questionID of questionIDs) {
+      const question = quiz.questions.find((q) => q._id.equals(questionID));
+      if (question) {
+        question.isCorrect = true;
+        await question.save();
+      }
+    }
+
+    res.status(200).json({ message: "Questions updated successfully" });
+  } catch (err) {
+    res
+      .status(422)
+      .json({ error: `Error marking questions as correct: ${err}` });
+  }
 };
 
 // ==== Delete ====
 
 // Remove quiz using Id
-exports.deleteQuiz = (req, res) => {
-  let quizID = req.params.id;
+exports.deleteQuiz = async (req, res) => {
+  const quizID = req.params.id;
 
-  let parentDirectoryID; // Store the parent directory's ID if it exists
+  try {
+    // Find the quiz by ID
+    const quiz = await Quiz.findById(quizID).exec();
+    if (!quiz) {
+      return res.status(422).json({ error: `Quiz with ID ${quizID} not found.` });
+    }
 
-  // Find the quiz by ID to check if it has a parent directory
-  Quiz.findById(quizID)
-    .exec()
-    .then((quiz) => {
-      if (!quiz) {
-        res.status(422).json({ error: `Quiz with ID ${quizID} not found.` });
-        return;
-      }
+    // Store the parent directory's ID if it exists
+    const parentDirectoryID = quiz.parentDirectory ? quiz.directory : null;
 
-      // Check if the quiz has a parent directory
-      if (quiz.directory) {
-        parentDirectoryID = quiz.directory; // Store the parent directory's ID
-      }
+    // Get the list of question references
+    const questionIDs = quiz.questions;
 
-      const questionIDs = quiz.questions; // Get the list of question references
+    // Delete the associated questions
+    await Question.deleteMany({ _id: { $in: questionIDs } }).exec();
 
-      // Delete the associated questions first
-      Question.deleteMany({ _id: { $in: questionIDs } }).exec();
-    })
-    .then(() => {
-      // After deleting questions, remove the quiz
-      Quiz.findByIdAndRemove(quizID).exec();
-    })
-    .then(() => {
-      if (parentDirectoryID) {
-        // If the quiz had a parent directory, find and update it
-        Directory.findByIdAndUpdate(parentDirectoryID, {
-          $pull: { quizzes: quizID }, // Remove the quiz ID from quizzes array
-        }).exec();
-      }
-    })
-    .then(() => {
-      // FIXME: Does not actually delete the quiz, it still returns the same amount of total quizzes
-      getQuizzes().then((retrievedQuiz) => {
-        res.status(200).json(retrievedQuiz);
-      });
-    })
-    .catch((err) => {
-      res
-        .status(422)
-        .json({ error: `Unable to remove quiz with ID ${quizID}: ${err}` });
-    });
+    // Remove the quiz
+    await Quiz.findByIdAndRemove(quizID).exec();
+
+    if (parentDirectoryID) {
+      // If the quiz had a parent directory, update it
+      await Directory.findByIdAndUpdate(parentDirectoryID, {
+        $pull: { quizzes: quizID }
+      }).exec();
+    }
+
+    // Respond with success
+    res.status(200).json({ message: `Quiz with ID ${quizID} successfully deleted.` });
+  } catch (err) {
+    // Handle any errors
+    res.status(500).json({ error: `Unable to remove quiz with ID ${quizID}: ${err}` });
+  }
 };
+
 
 // ========== QUESTION ==========
 

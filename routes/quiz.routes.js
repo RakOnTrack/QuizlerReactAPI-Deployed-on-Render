@@ -42,7 +42,7 @@ router.put("/question/:id", quizService.addQuestion);
 router.put("/restart/:id", quizService.restartQuiz);
 
 // Update study results for quiz
-router.put("/saveresults/:id", quizService.markQuestionsCorrect);
+router.put("/markCorrectAnswers/:id", quizService.markQuestionsCorrect);
 
 // Remove quiz using its Id
 router.delete("/:id", quizService.deleteQuiz);

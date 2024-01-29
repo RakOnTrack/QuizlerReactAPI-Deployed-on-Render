@@ -6,6 +6,7 @@ const passport = require("passport");
 const passportJWT = require("passport-jwt");
 const db = require("../models/index"); // retrieve mongo connection
 const directoryController = require("./directory.controller.js");
+const quizController = require("./quiz.controller.js");
 let User = db.mongoose.connection.model(
   "User",
   require("../models/user.model")
@@ -45,9 +46,7 @@ module.exports.createUser = async (req, res) => {
     if (password != password2) {
       res.status(400).json({ error: "Passwords do not match" });
     } else {
-      // Create new user
-      // });
-      // var salt = bcrypt.genSalt(10, (err, salt));
+
       var salt = await bcrypt.genSalt(10).catch((err) => console.error(err));
 
       // console.log("Generated salt:", salt);
@@ -62,7 +61,7 @@ module.exports.createUser = async (req, res) => {
         password: hash,
         rootDir: rootDir._id,
       });
-      // console.log(newUser);
+
       newUser.save();
       res.send("User " + newUser.userName + " successfully registered");
     }
@@ -72,14 +71,11 @@ module.exports.createUser = async (req, res) => {
     } else {
       res.send("There was an error creating the user: " + err);
     }
-    // });
+
   }
 };
 
-// let jwtOptions = {
-//   jwtFromRequest: ExtractJwt.fromAuthHeaderWithScheme("jwt"),
-//   secretOrKey: "your_secret_key",
-// };
+
 
 // Login user
 module.exports.loginUser = async (req, res) => {
@@ -117,25 +113,7 @@ module.exports.loginUser = async (req, res) => {
   }
 };
 
-// Check if user exists
-// module.exports.checkUser = function (userData) {
-//   return new Promise(function (resolve, reject) {
-//     User.findOne({ userName: userData.userName })
-//       .exec()
-//       .then((user) => {
-//         bcrypt.compare(userData.password, user.password).then((res) => {
-//           if (res === true) {
-//             resolve(user);
-//           } else {
-//             reject("Incorrect password for user " + userData.userName);
-//           }
-//         });
-//       })
-//       .catch((err) => {
-//         reject("Unable to find user " + userData.userName);
-//       });
-//   });
-// };
+
 
 module.exports.getUserProfile = async (req, res) => {
   try {
@@ -182,42 +160,18 @@ module.exports.getQuizzesInDirectory = async (req, res) => {
   }
 };
 
-module.exports.updateQuiz = async (req, res) => {
-  try {
-    const quizId = req.params.quizId;
-    const updatedData = req.body;
-    const updatedQuiz = await Quiz.findByIdAndUpdate(quizId, updatedData, {
-      new: true,
-    });
-    res.json(updatedQuiz);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
+
 
 module.exports.getQuizDetails = async (req, res) => {
   try {
-    const quizId = req.params.quizId;
-    const quiz = await Quiz.findById(quizId);
-    if (!quiz) {
-      return res.status(404).json({ message: "Quiz not found" });
-    }
-    res.json(quiz);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
+    // const quizId = req.params.quizId;
 
-exports.updateDirectory = async (req, res) => {
-  try {
-    const directoryId = req.params.directoryId;
-    const updatedData = req.body;
-    const updatedDirectory = await Directory.findByIdAndUpdate(
-      directoryId,
-      updatedData,
-      { new: true }
-    );
-    res.json(updatedDirectory);
+    return quizController.getQuiz(req, res);
+    // const quiz = await Quiz.findById(quizId);
+    // if (!quiz) {
+    //   return res.status(404).json({ message: "Quiz not found" });
+    // }
+    res.json(quiz);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

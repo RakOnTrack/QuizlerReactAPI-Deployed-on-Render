@@ -127,7 +127,7 @@ describe("Directory API Tests", () => {
       );
 
       // add the loginUser.body.token to the header as authorization.
-      const getDashboard = await authenticatedAgent.get("/api/users/dashboard");
+      const getDashboard = await authenticatedAgent.get("/api/users/profile");
       // .set("authorization", loginUser.body.token);
       // const getDashboard = await request(app).get("/api/users/dashboard");
 
@@ -187,14 +187,14 @@ describe("Directory API Tests", () => {
         quizTitle: "My Quiz",
         questions: [
           {
-            question: "Question 1",
-            options: ["Option 1", "Option 2", "Option 3"],
-            answer: 0,
+            questionTitle: "Question 1",
+            incorrect_answers: ["Option 1", "Option 2", "Option 3"],
+            correct_answer: 0,
           },
           {
-            question: "Question 2",
-            options: ["Option 1", "Option 2", "Option 3"],
-            answer: 1,
+            questionTitle: "Question 2",
+            incorrect_answers: ["Option 1", "Option 2", "Option 3"],
+            correct_answer: 1,
           },
         ],
       };
@@ -295,14 +295,14 @@ describe("Directory API Tests", () => {
         quizTitle: "My Quiz",
         questions: [
           {
-            question: "Question 1",
-            options: ["Option 1", "Option 2", "Option 3"],
-            answer: 0,
+            questionTitle: "Question 1",
+            incorrect_answers: ["Option 1", "Option 2", "Option 3"],
+            correct_answer: 0,
           },
           {
-            question: "Question 2",
-            options: ["Option 1", "Option 2", "Option 3"],
-            answer: 1,
+            questionTitle: "Question 2",
+            incorrect_answers: ["Option 1", "Option 2", "Option 3"],
+            correct_answer: 1,
           },
         ],
         directoryId: subDirID,
@@ -388,17 +388,16 @@ describe("Directory API Tests", () => {
         quizTitle: "My Quiz",
         questions: [
           {
-            question: "Question 1",
-            options: ["Option 1", "Option 2", "Option 3"],
-            answer: 0,
+            questionTitle: "Question 1",
+            incorrect_answers: ["Option 1", "Option 2", "Option 3"],
+            correct_answer: 0,
           },
           {
-            question: "Question 2",
-            options: ["Option 1", "Option 2", "Option 3"],
-            answer: 1,
+            questionTitle: "Question 2",
+            incorrect_answers: ["Option 1", "Option 2", "Option 3"],
+            correct_answer: 1,
           },
         ],
-        // directoryId: subDirID,
       };
 
       // Add the quiz to the rootDir
@@ -424,7 +423,7 @@ describe("Directory API Tests", () => {
       //   });
 
       const moveQuiz = await authenticatedAgent
-        .put("/api/users/moveQuiz")
+        .put("/api/users/quizzes/moveQuiz")
         .send({
           quizId: getProfile.body.directory.quizzes[0]._id,
           newDirectoryId: subDirID,
@@ -444,4 +443,574 @@ describe("Directory API Tests", () => {
       // Add more assertions for the quizzes in the subdirectory
     });
   });
+
+  describe("GET /api/users/quizzes", () => {
+    it("should read a quiz from the user route", async () => {
+      const createUser = await createNewUser(app);
+
+      expect(createUser.status).toBe(200);
+
+      const loginUser = await loginTestUser(app);
+
+      expect(loginUser.status).toBe(200);
+
+      // Create an agent and set the authorization header
+      const authenticatedAgent = await getAuthenticatedAgent(
+        app,
+        loginUser.body.token
+      );
+
+      const quiz = {
+        quizTitle: "My Quiz",
+        questions: [
+          {
+            questionTitle: "Question 1",
+            incorrect_answers: ["Option 1", "Option 2", "Option 3"],
+            correct_answer: 0,
+          },
+          {
+            questionTitle: "Question 2",
+            incorrect_answers: ["Option 1", "Option 2", "Option 3"],
+            correct_answer: 1,
+          },
+        ],
+      };
+
+      // Add the quiz to the rootDir
+      const makeQuiz = await authenticatedAgent
+        .post("/api/users/addQuiz")
+        .send(quiz);
+      expect(makeQuiz.status).toBe(200);
+
+      let getProfile = await authenticatedAgent.get("/api/users/profile");
+
+      const readQuiz = await authenticatedAgent
+        .get("/api/users/quizzes/" + getProfile.body.directory.quizzes[0]._id)
+        .send({});
+      expect(readQuiz.status).toBe(200);
+
+      expect(readQuiz.body.quizTitle).toBe(quiz.quizTitle);
+      expect(readQuiz.body.questions.length).toBe(2);
+    });
+  });
+
+  describe("GET /api/users/quizzes", () => {
+    it("should read a quiz from the user route", async () => {
+      const createUser = await createNewUser(app);
+
+      expect(createUser.status).toBe(200);
+
+      const loginUser = await loginTestUser(app);
+
+      expect(loginUser.status).toBe(200);
+
+      // Create an agent and set the authorization header
+      const authenticatedAgent = await getAuthenticatedAgent(
+        app,
+        loginUser.body.token
+      );
+
+      const quiz = {
+        quizTitle: "My Quiz",
+        questions: [
+          {
+            questionTitle: "Question 1",
+            incorrect_answers: ["Option 1", "Option 2", "Option 3"],
+            correct_answer: 0,
+          },
+          {
+            questionTitle: "Question 2",
+            incorrect_answers: ["Option 1", "Option 2", "Option 3"],
+            correct_answer: 1,
+          },
+        ],
+      };
+
+      // Add the quiz to the rootDir
+      const makeQuiz = await authenticatedAgent
+        .post("/api/users/addQuiz")
+        .send(quiz);
+      expect(makeQuiz.status).toBe(200);
+
+      let getProfile = await authenticatedAgent.get("/api/users/profile");
+      const renameQuiz = await authenticatedAgent
+        .put(
+          "/api/users/quizzes/rename/" +
+            getProfile.body.directory.quizzes[0]._id
+        )
+        .send({
+          // quizId: getProfile.body.directory.quizzes[0]._id,
+          quizTitle: "new title",
+        });
+
+      expect(renameQuiz.status).toBe(200);
+      expect(renameQuiz.body.quizTitle).toBe("new title");
+    });
+  });
+
+  // 12 read directory( for subdirectory, root already works.)
+  describe("GET /api/directories/:id", () => {
+    it("should retrieve the specified directory and its contents", async () => {
+      const createUser = await createNewUser(app);
+
+      expect(createUser.status).toBe(200);
+
+      const loginUser = await loginTestUser(app);
+
+      expect(loginUser.status).toBe(200);
+
+      // Create an agent and set the authorization header
+      const authenticatedAgent = await getAuthenticatedAgent(
+        app,
+        loginUser.body.token
+      );
+
+      const subdirectory = {
+        name: "Test Subdirectory",
+      };
+
+      // Add the subdirectory to the user's rootDir
+      const addSubdirectory = await authenticatedAgent
+        .post("/api/users/addDirectory")
+        .send(subdirectory);
+
+      expect(addSubdirectory.status).toBe(200);
+      expect(addSubdirectory.body.name).toBe(subdirectory.name);
+
+      // use the subdirectory ID to get the subdirectory
+
+      const getProfile = await authenticatedAgent.get("/api/users/profile");
+      expect(getProfile.body.directory.subdirectories.length).toBe(1);
+      expect(getProfile.body.directory.subdirectories[0]._id).toBe(
+        addSubdirectory.body._id
+      );
+      const readSubdirectory = await authenticatedAgent
+        .get("/api/users/directory")
+        .send({ id: getProfile.body.directory.subdirectories[0]._id });
+
+      expect(readSubdirectory.status).toBe(200);
+      expect(readSubdirectory.body.name).toBe(subdirectory.name);
+      expect(readSubdirectory.body.quizzes.length).toBe(0);
+      expect(readSubdirectory.body.subdirectories.length).toBe(0);
+      expect(readSubdirectory.body.parentDirectory).toBe(
+        getProfile.body.user.rootDir
+      );
+    });
+  });
+
+  // // 3 adding a new question to a quiz
+  describe("PUT /api/users/quizzes/:quizId/questions/add", () => {
+    it("should add a new question to the specified quiz", async () => {
+      // Create user and login to get token
+      const createUser = await createNewUser(app);
+      expect(createUser.status).toBe(200);
+      const loginUser = await loginTestUser(app);
+      const authenticatedAgent = await getAuthenticatedAgent(
+        app,
+        loginUser.body.token
+      );
+
+      // Create a quiz
+      const quiz = {
+        quizTitle: "My Quiz",
+        questions: [
+          {
+            questionTitle: "Question 1",
+            incorrect_answers: ["Option 1", "Option 2", "Option 3"],
+            correct_answer: 0,
+          },
+          {
+            questionTitle: "Question 2",
+            incorrect_answers: ["Option 1", "Option 2", "Option 3"],
+            correct_answer: 1,
+          },
+        ],
+      };
+      const createQuizResponse = await authenticatedAgent
+        .post("/api/users/addQuiz")
+        .send(quiz);
+      const quizId = createQuizResponse.body._id;
+
+      // Define the new question data
+      const newQuestion = {
+        questionTitle: "Question 3",
+        incorrect_answers: ["Option 1", "Option 2", "Option 3"],
+        correct_answer: 1,
+      };
+
+      // Send request to add a new question to the quiz
+      const response = await authenticatedAgent
+        .put(`/api/users/quizzes/${quizId}/questions/add`)
+        .send(newQuestion);
+
+      // Assert the expected result
+      expect(response.status).toBe(200);
+      expect(response.body.questions.length).toBe(3);
+      expect(response.body.questions[2].questionTitle).toBe(
+        newQuestion.questionTitle
+      );
+
+      // Additional assertions...
+    });
+  });
+
+  // // 4 save study mode results, and restarting quiz
+  describe("PUT /api/users/quizzes/:quizId/restart", () => {
+    it("should save study mode results and allow restarting the quiz", async () => {
+      const createUser = await createNewUser(app);
+
+      expect(createUser.status).toBe(200);
+
+      const loginUser = await loginTestUser(app);
+      const authenticatedAgent = await getAuthenticatedAgent(
+        app,
+        loginUser.body.token
+      );
+
+      // Assuming a quiz has been attempted and its ID is known
+      // Create a quiz
+      const quiz = {
+        quizTitle: "Save Study Mode Results Test",
+        questions: [
+          {
+            questionTitle: "Question 1",
+            incorrect_answers: ["Option 1", "Option 2", "Option 3"],
+            correct_answer: 0,
+          },
+          {
+            questionTitle: "Question 2",
+            incorrect_answers: ["Option 1", "Option 2", "Option 3"],
+            correct_answer: 1,
+          },
+        ],
+      };
+      const createQuizResponse = await authenticatedAgent
+        .post("/api/users/addQuiz")
+        .send(quiz);
+      const quizId = createQuizResponse.body._id;
+
+      //get profile
+      const getQuiz = await authenticatedAgent.get(
+        "/api/users/quizzes/" + quizId
+      );
+      expect(getQuiz.status).toBe(200);
+      const question1id = getQuiz.body.questions[0]._id;
+
+      //mark question 1 as correct
+      const markQuestionCorrect = await authenticatedAgent
+        .put("/api/users/quizzes/" + quizId + "/markCorrect")
+        .send({ correctQuestions: [question1id] });
+
+      expect(markQuestionCorrect.status).toBe(200);
+
+      const getProfile2nd = await authenticatedAgent.get("/api/users/profile");
+
+      expect(getProfile2nd.status).toBe(200);
+      expect(
+        getProfile2nd.body.directory.quizzes[0].numberOfCorrectQuestions
+      ).toBe(1);
+      const restartResponse = await authenticatedAgent.put(
+        `/api/users/quizzes/${quizId}/restart`
+      );
+      expect(restartResponse.status).toBe(200);
+
+      const getProfile3rd = await authenticatedAgent.get("/api/users/profile");
+
+      expect(getProfile3rd.status).toBe(200);
+      expect(
+        getProfile3rd.body.directory.quizzes[0].numberOfCorrectQuestions
+      ).toBe(0);
+      // Further assertions based on your restart logic
+    });
+  });
+
+  // // // 5 delete a quiz
+  describe("DELETE /api/users/quizzes/:id", () => {
+    it("should delete the specified quiz", async () => {
+      const createUser = await createNewUser(app);
+
+      expect(createUser.status).toBe(200);
+
+      const loginUser = await loginTestUser(app);
+      const authenticatedAgent = await getAuthenticatedAgent(
+        app,
+        loginUser.body.token
+      );
+
+      // Assuming a quiz has been created already and its ID is known
+      const quiz = {
+        quizTitle: "Save Study Mode Results Test",
+        questions: [
+          {
+            questionTitle: "Question 1",
+            incorrect_answers: ["Option 1", "Option 2", "Option 3"],
+            correct_answer: 0,
+          },
+          {
+            questionTitle: "Question 2",
+            incorrect_answers: ["Option 1", "Option 2", "Option 3"],
+            correct_answer: 1,
+          },
+        ],
+      };
+
+      // Add the quiz to the rootDir
+      const makeQuiz = await authenticatedAgent
+        .post("/api/users/addQuiz")
+        .send(quiz);
+      expect(makeQuiz.status).toBe(200);
+      const getProfile = await authenticatedAgent.get("/api/users/profile");
+      expect(getProfile.status).toBe(200);
+      expect(getProfile.body.directory.quizzes.length).toBe(1);
+
+      const quizID = makeQuiz.body._id;
+      const deleteResponse = await authenticatedAgent.delete(
+        `/api/users/quizzes/${quizID}`
+      );
+      expect(deleteResponse.status).toBe(200);
+      // Further assertions to confirm deletion
+      const deleteResponse2 = await authenticatedAgent.delete(
+        `/api/users/quizzes/${quizID}`
+      );
+      expect(deleteResponse2.status).toBe(422);
+      // check that there are no quizzes in the rootDir
+      const getProfile2nd = await authenticatedAgent.get("/api/users/profile");
+      expect(getProfile2nd.status).toBe(200);
+      expect(getProfile2nd.body.directory.quizzes.length).toBe(0);
+    });
+
+
+  });
+
+  // // // 6 changing contents of a question
+  describe("PUT /api/users/quizzes/:id", () => {
+    it("should update the contents of a question in a quiz", async () => {
+      const createUser = await createNewUser(app);
+
+      expect(createUser.status).toBe(200);
+
+      const loginUser = await loginTestUser(app);
+      const authenticatedAgent = await getAuthenticatedAgent(
+        app,
+        loginUser.body.token
+      );
+      const quiz = {
+        quizTitle: "Save Study Mode Results Test",
+        questions: [
+          {
+            questionTitle: "Question 1",
+            incorrect_answers: ["Option 1", "Option 2", "Option 3"],
+            correct_answer: 0,
+          },
+          {
+            questionTitle: "Question 2",
+            incorrect_answers: ["Option 1", "Option 2", "Option 3"],
+            correct_answer: 1,
+          },
+        ],
+      };
+      // Add the quiz to the rootDir
+      const makeQuiz = await authenticatedAgent
+        .post("/api/users/addQuiz")
+        .send(quiz);
+      expect(makeQuiz.status).toBe(200);
+       const quizID = makeQuiz.body._id;
+      // Assuming a quiz with a specific question is known
+      // const quizId = "your_quiz_id";
+      const questionId = makeQuiz.body.questions[0]._id;
+      const updatedQuestion = {
+        questionTitle: "Updated Question",
+        incorrect_answers: ["Option 1", "Option 2", "Option 3"],
+        correct_answer: 1,
+      };
+
+      const updateResponse = await authenticatedAgent
+        .put(`/api/users/quizzes/${quizID}/questions/${questionId}`)
+        .send(updatedQuestion);
+      expect(updateResponse.status).toBe(200);
+      expect(updateResponse.body.questionTitle).toBe(updatedQuestion.questionTitle);
+      // Additional assertions for updated question
+    });
+  });
+
+  // // // 7 deleting a question
+  // describe("DELETE /api/users/quizzes/questions/:questionId", () => {
+  //   it("should delete a specific question from a quiz", async () => {
+  // const createUser = await createNewUser(app);
+  // expect(createUser.status).toBe(200);
+  //     const loginUser = await loginTestUser(app);
+  //     const authenticatedAgent = await getAuthenticatedAgent(
+  //       app,
+  //       loginUser.body.token
+  //     );
+  // const quiz = {
+  //   quizTitle: "Save Study Mode Results Test",
+  //   questions: [
+  //     {
+  //       questionTitle: "Question 1",
+  //       incorrect_answers: ["Option 1", "Option 2", "Option 3"],
+  //       correct_answer: 0,
+  //     },
+  //     {
+  //       questionTitle: "Question 2",
+  //       incorrect_answers: ["Option 1", "Option 2", "Option 3"],
+  //       correct_answer: 1,
+  //     },
+  //   ],
+  // };
+  // Add the quiz to the rootDir
+  //  const makeQuiz = await authenticatedAgent
+  //  .post("/api/users/addQuiz")
+  //  .send(quiz);
+  // expect(makeQuiz.status).toBe(200);
+ //const quizID = makeQuiz.body._id;
+
+
+  //     const deleteResponse = await authenticatedAgent.delete(
+  //       `/api/users/quizzes/questions/${questionId}`
+  //     );
+  //     expect(deleteResponse.status).toBe(200);
+  //     // Additional assertions to confirm question deletion
+  //   });
+  // });
+
+  // // // 8 move directory
+  // describe("PUT /api/users/directory/:directoryId/move", () => {
+  //   it("should move a directory to a new location", async () => {
+  // const createUser = await createNewUser(app);
+
+  // expect(createUser.status).toBe(200);
+
+  //     const loginUser = await loginTestUser(app);
+  //     const authenticatedAgent = await getAuthenticatedAgent(
+  //       app,
+  //       loginUser.body.token
+  //     );
+
+  //     // Assuming directory IDs are known
+  //     const directoryId = "your_directory_id";
+  //     const newParentId = "new_parent_directory_id";
+
+  //     const moveResponse = await authenticatedAgent
+  //       .put(`/api/users/directory/${directoryId}/move`)
+  //       .send({ newParentId });
+  //     expect(moveResponse.status).toBe(200);
+  //     // Additional assertions for directory movement
+  //   });
+  // });
+
+  // // // 9 rename a directory (root invalid)
+  // describe("PUT /api/users/directory/:directoryId/rename", () => {
+  //   it("should rename a specified directory", async () => {
+  // const createUser = await createNewUser(app);
+
+  // expect(createUser.status).toBe(200);
+
+  //     const loginUser = await loginTestUser(app);
+  //     const authenticatedAgent = await getAuthenticatedAgent(
+  //       app,
+  //       loginUser.body.token
+  //     );
+
+  //     const directoryId = "your_directory_id";
+  //     const newName = "New Directory Name";
+
+  //     const renameResponse = await authenticatedAgent
+  //       .put(`/api/users/directory/${directoryId}/rename`)
+  //       .send({ newTitle: newName });
+  //     expect(renameResponse.status).toBe(200);
+  //     // Additional assertions for renamed directory
+  //   });
+  // });
+
+  // // // 10 switch order of subdirectories and quizzes
+  // describe("PUT /api/users/directory/:directoryId/switchOrder", () => {
+  //   it("should change the order of subdirectories and quizzes within a directory", async () => {
+  // const createUser = await createNewUser(app);
+
+  // expect(createUser.status).toBe(200);
+
+  //     const loginUser = await loginTestUser(app);
+  //     const authenticatedAgent = await getAuthenticatedAgent(
+  //       app,
+  //       loginUser.body.token
+  //     );
+  // const quiz = {
+  //   quizTitle: "Save Study Mode Results Test",
+  //   questions: [
+  //     {
+  //       questionTitle: "Question 1",
+  //       incorrect_answers: ["Option 1", "Option 2", "Option 3"],
+  //       correct_answer: 0,
+  //     },
+  //     {
+  //       questionTitle: "Question 2",
+  //       incorrect_answers: ["Option 1", "Option 2", "Option 3"],
+  //       correct_answer: 1,
+  //     },
+  //   ],
+  // };
+  // Add the quiz to the rootDir
+  //  const makeQuiz = await authenticatedAgent
+  //  .post("/api/users/addQuiz")
+  //  .send(quiz);
+  // expect(makeQuiz.status).toBe(200);
+ //const quizID = makeQuiz.body._id;
+
+  //     const directoryId = "your_directory_id";
+  //     const newOrder = {
+  //       /* new order data */
+  //     };
+
+  //     const switchOrderResponse = await authenticatedAgent
+  //       .put(`/api/users/directory/${directoryId}/switchOrder`)
+  //       .send(newOrder);
+  //     expect(switchOrderResponse.status).toBe(200);
+  //     // Additional assertions for order change
+  //   });
+  // });
+
+  // // // 11 delete directory (only sub directory, root is invalid) and check if the quizzes are deleted
+  // describe("DELETE /api/users/directory/:directoryId", () => {
+  //   it("should delete a specified subdirectory", async () => {
+  // const createUser = await createNewUser(app);
+
+  // expect(createUser.status).toBe(200);
+
+  //     const loginUser = await loginTestUser(app);
+  //     const authenticatedAgent = await getAuthenticatedAgent(
+  //       app,
+  //       loginUser.body.token
+  //     );
+  // const quiz = {
+  //   quizTitle: "Save Study Mode Results Test",
+  //   questions: [
+  //     {
+  //       questionTitle: "Question 1",
+  //       incorrect_answers: ["Option 1", "Option 2", "Option 3"],
+  //       correct_answer: 0,
+  //     },
+  //     {
+  //       questionTitle: "Question 2",
+  //       incorrect_answers: ["Option 1", "Option 2", "Option 3"],
+  //       correct_answer: 1,
+  //     },
+  //   ],
+  // };
+  // Add the quiz to the rootDir
+  //  const makeQuiz = await authenticatedAgent
+  //  .post("/api/users/addQuiz")
+  //  .send(quiz);
+  // expect(makeQuiz.status).toBe(200);
+ //const quizID = makeQuiz.body._id;
+
+  //     const directoryId = "your_subdirectory_id";
+
+  //     const deleteResponse = await authenticatedAgent.delete(
+  //       `/api/users/directory/${directoryId}`
+  //     );
+  //     expect(deleteResponse.status).toBe(200);
+  //     // Additional assertions to confirm subdirectory deletion
+  //   });
+  // });
 });

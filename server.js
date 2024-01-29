@@ -38,7 +38,7 @@ app.use(express.urlencoded({ extended: true })); // parse requests application/x
 
 // redirect home to get all quizzes.
 app.get("/", (req, res) => {
-  res.json({ message: "Quizler App" });
+  res.json({ message: "Quizzler App" });
 });
 
 app.use("/api/quizzes", quizRoutes);

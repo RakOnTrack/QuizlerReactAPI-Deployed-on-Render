@@ -8,10 +8,7 @@ let Directory = db.mongoose.connection.model(
   "Directory",
   require("../models/directory.model")
 );
-// let User = db.mongoose.connection.model(
-//   "User",
-//   require("../models/user.model")
-// );
+
 
 // Creating a new directory
 exports.createDirectory = async (req, res) => {
@@ -21,12 +18,6 @@ exports.createDirectory = async (req, res) => {
     ? null
     : req.body.parentDirectoryId || process.env.DEFAULT_ROOT_DIRECTORY;
 
-  // try {
-  //   // Rest of the code remains the same
-  //   // ...
-  // }
-
-  // let parentDirectoryId =  req.body.parentDirectoryId || process.env.DEFAULT_ROOT_DIRECTORY;
 
   try {
     if (!name && !isRoot) {
@@ -57,14 +48,7 @@ exports.createDirectory = async (req, res) => {
       }
     }
 
-    // If this is a test environment and there's no root directory, return the directory details
-    // if (
-    //   process.env.NODE_ENV === "test" &&
-    //   //allow this to be the root directory, for now at least.
-    //   req.body.parentDirectoryId === null
-    // ) {
-    //   return res.status(200).json(savedDirectory);
-    // }
+
 
     // Send a success response
     if (isRoot) {
