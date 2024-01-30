@@ -9,7 +9,7 @@ const directoryController = require("./directory.controller.js");
 const quizController = require("./quiz.controller.js");
 let User = db.mongoose.connection.model(
   "User",
-  require("../models/user.model")
+  require("../models/user.model"),
 );
 const { createDirectory } = directoryController;
 
@@ -23,7 +23,7 @@ const jwtOptions = {
 // Create a new user
 module.exports.createUser = async (req, res) => {
   // .catch((err) => reject(err));
-  let { username, password, password2 } = req.body;
+  let { username, password, password2, email } = req.body;
   try {
     // Check if values are valid
     if (!username || !password) {
@@ -31,22 +31,28 @@ module.exports.createUser = async (req, res) => {
       return;
     }
 
-    if (password.length < 6) {
-      res.status(400).json({ error: "Password must be at least 6 characters" });
-    }
+    // if (password.length < 6) {
+    //   res.status(400).json({ error: "Password must be at least 6 characters" });
+    // }
 
     // Check if user exists
-    const user = await User.findOne({ userName: username });
+    const user = await User.findOne({ username: username });
 
     if (user) {
       res.status(400).json({ error: "User already exists" });
+      return;
+    }
+    // Check if email is used
+    const userEmail = await User.findOne({ email: email });
+
+    if (userEmail) {
+      res.status(400).json({ error: "Email is already used." });
       return;
     }
 
     if (password != password2) {
       res.status(400).json({ error: "Passwords do not match" });
     } else {
-
       var salt = await bcrypt.genSalt(10).catch((err) => console.error(err));
 
       // console.log("Generated salt:", salt);
@@ -57,13 +63,14 @@ module.exports.createUser = async (req, res) => {
       const rootDir = await directoryService.createDirectory(req, res);
 
       let newUser = new User({
-        userName: username,
+        username: username,
         password: hash,
         rootDir: rootDir._id,
+        email: email,
       });
 
       newUser.save();
-      res.send("User " + newUser.userName + " successfully registered");
+      res.send("User " + newUser.username + " successfully registered");
     }
   } catch (err) {
     if (err.code == 11000) {
@@ -71,11 +78,8 @@ module.exports.createUser = async (req, res) => {
     } else {
       res.send("There was an error creating the user: " + err);
     }
-
   }
 };
-
-
 
 // Login user
 module.exports.loginUser = async (req, res) => {
@@ -83,7 +87,7 @@ module.exports.loginUser = async (req, res) => {
     const { username, password } = req.body;
 
     // Find the user by username
-    const user = await User.findOne({ userName: username });
+    const user = await User.findOne({ username: username });
     if (!user) {
       return res.status(401).json({ message: "Invalid username or password" });
     }
@@ -97,7 +101,7 @@ module.exports.loginUser = async (req, res) => {
     // Prepare JWT payload
     const payload = {
       _id: user._id,
-      userName: user.userName,
+      username: user.username,
       rootDir: user.rootDir, // Assuming this is the correct field
     };
 
@@ -112,8 +116,6 @@ module.exports.loginUser = async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
-
-
 
 module.exports.getUserProfile = async (req, res) => {
   try {
@@ -159,8 +161,6 @@ module.exports.getQuizzesInDirectory = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
-
 
 module.exports.getQuizDetails = async (req, res) => {
   try {

@@ -9,15 +9,15 @@ const { generateQuiz } = require("./quizGenerator");
 
 let Question = db.mongoose.connection.model(
   "Questions",
-  require("../models/question.model")
+  require("../models/question.model"),
 );
 let Quiz = db.mongoose.connection.model(
   "Quizzes",
-  require("../models/quiz.model")
+  require("../models/quiz.model"),
 );
 let Directory = db.mongoose.connection.model(
   "Directory",
-  require("../models/directory.model")
+  require("../models/directory.model"),
 );
 
 // ==== Create ====
@@ -352,7 +352,7 @@ exports.addQuestion = async (req, res) => {
         Quiz.findByIdAndUpdate(
           quizId,
           { $push: { questions: savedQuestion._id } },
-          { new: true }
+          { new: true },
         )
           .exec()
           .then(async () => {
@@ -441,7 +441,9 @@ exports.deleteQuiz = async (req, res) => {
     // Find the quiz by ID
     const quiz = await Quiz.findById(quizID).exec();
     if (!quiz) {
-      return res.status(422).json({ error: `Quiz with ID ${quizID} not found.` });
+      return res
+        .status(422)
+        .json({ error: `Quiz with ID ${quizID} not found.` });
     }
 
     // Store the parent directory's ID if it exists
@@ -459,18 +461,21 @@ exports.deleteQuiz = async (req, res) => {
     if (parentDirectoryID) {
       // If the quiz had a parent directory, update it
       await Directory.findByIdAndUpdate(parentDirectoryID, {
-        $pull: { quizzes: quizID }
+        $pull: { quizzes: quizID },
       }).exec();
     }
 
     // Respond with success
-    res.status(200).json({ message: `Quiz with ID ${quizID} successfully deleted.` });
+    res
+      .status(200)
+      .json({ message: `Quiz with ID ${quizID} successfully deleted.` });
   } catch (err) {
     // Handle any errors
-    res.status(500).json({ error: `Unable to remove quiz with ID ${quizID}: ${err}` });
+    res
+      .status(500)
+      .json({ error: `Unable to remove quiz with ID ${quizID}: ${err}` });
   }
 };
-
 
 // ========== QUESTION ==========
 
@@ -530,7 +535,7 @@ exports.deleteQuestion = (req, res) => {
       // Remove the question reference from all quizzes
       return Quiz.updateMany(
         { questions: questionID },
-        { $pull: { questions: questionID } }
+        { $pull: { questions: questionID } },
       ).exec();
     })
     .then(() => {

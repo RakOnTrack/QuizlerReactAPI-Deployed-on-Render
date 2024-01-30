@@ -27,8 +27,6 @@ router.post("/openai", upload.none(), async (req, res) => {
 // Get all quizzes
 router.get("/", quizService.getQuizzes);
 
-
-
 // Get specific Quiz by ID
 router.get("/:id", quizService.getQuiz);
 

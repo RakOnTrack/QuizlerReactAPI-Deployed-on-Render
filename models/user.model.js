@@ -1,9 +1,7 @@
 const mongoose = require("mongoose");
 
-
-
 const userSchema = new mongoose.Schema({
-  userName: {
+  username: {
     type: String,
     unique: true,
   },
@@ -11,6 +9,10 @@ const userSchema = new mongoose.Schema({
   rootDir: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Directory",
+  },
+  email: {
+    type: String,
+    unique: true,
   },
 });
 

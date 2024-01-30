@@ -30,7 +30,7 @@ app.use(
     secret: "secret",
     resave: true,
     saveUninitialized: true,
-  })
+  }),
 );
 
 let userCount = 0;
@@ -123,7 +123,7 @@ describe("Directory API Tests", () => {
       // Create an agent and set the authorization header
       const authenticatedAgent = await getAuthenticatedAgent(
         app,
-        loginUser.body.token
+        loginUser.body.token,
       );
 
       // add the loginUser.body.token to the header as authorization.
@@ -148,14 +148,14 @@ describe("Directory API Tests", () => {
       // Create an agent and set the authorization header
       const authenticatedAgent = await getAuthenticatedAgent(
         app,
-        loginUser.body.token
+        loginUser.body.token,
       );
 
       // this call should get the user's profile, including items in the rootDir.
       const getProfile = await authenticatedAgent.get("/api/users/profile");
 
       expect(getProfile.status).toBe(200);
-      expect(getProfile.body.user.userName).toBe("testUser" + userCount);
+      expect(getProfile.body.user.username).toBe("testUser" + userCount);
       expect(getProfile.body.directory._id).toBeDefined;
       // Add more assertions for the user's profile data
 
@@ -179,7 +179,7 @@ describe("Directory API Tests", () => {
       // Create an agent and set the authorization header
       const authenticatedAgent = await getAuthenticatedAgent(
         app,
-        loginUser.body.token
+        loginUser.body.token,
       );
 
       // Create a quiz object
@@ -229,7 +229,7 @@ describe("Directory API Tests", () => {
       // Create an agent and set the authorization header
       const authenticatedAgent = await getAuthenticatedAgent(
         app,
-        loginUser.body.token
+        loginUser.body.token,
       );
 
       // Create a subdirectory object
@@ -268,7 +268,7 @@ describe("Directory API Tests", () => {
       // Create an agent and set the authorization header
       const authenticatedAgent = await getAuthenticatedAgent(
         app,
-        loginUser.body.token
+        loginUser.body.token,
       );
 
       // Create a subdirectory object
@@ -361,7 +361,7 @@ describe("Directory API Tests", () => {
       // Create an agent and set the authorization header
       const authenticatedAgent = await getAuthenticatedAgent(
         app,
-        loginUser.body.token
+        loginUser.body.token,
       );
 
       // Create a subdirectory object
@@ -438,7 +438,7 @@ describe("Directory API Tests", () => {
       expect(getProfile.status).toBe(200);
       expect(getProfile.body.directory.quizzes.length).toBe(0);
       expect(getProfile.body.directory.subdirectories[0].numberOfQuizzes).toBe(
-        1
+        1,
       );
       // Add more assertions for the quizzes in the subdirectory
     });
@@ -457,7 +457,7 @@ describe("Directory API Tests", () => {
       // Create an agent and set the authorization header
       const authenticatedAgent = await getAuthenticatedAgent(
         app,
-        loginUser.body.token
+        loginUser.body.token,
       );
 
       const quiz = {
@@ -507,7 +507,7 @@ describe("Directory API Tests", () => {
       // Create an agent and set the authorization header
       const authenticatedAgent = await getAuthenticatedAgent(
         app,
-        loginUser.body.token
+        loginUser.body.token,
       );
 
       const quiz = {
@@ -536,7 +536,7 @@ describe("Directory API Tests", () => {
       const renameQuiz = await authenticatedAgent
         .put(
           "/api/users/quizzes/rename/" +
-            getProfile.body.directory.quizzes[0]._id
+            getProfile.body.directory.quizzes[0]._id,
         )
         .send({
           // quizId: getProfile.body.directory.quizzes[0]._id,
@@ -562,7 +562,7 @@ describe("Directory API Tests", () => {
       // Create an agent and set the authorization header
       const authenticatedAgent = await getAuthenticatedAgent(
         app,
-        loginUser.body.token
+        loginUser.body.token,
       );
 
       const subdirectory = {
@@ -582,7 +582,7 @@ describe("Directory API Tests", () => {
       const getProfile = await authenticatedAgent.get("/api/users/profile");
       expect(getProfile.body.directory.subdirectories.length).toBe(1);
       expect(getProfile.body.directory.subdirectories[0]._id).toBe(
-        addSubdirectory.body._id
+        addSubdirectory.body._id,
       );
       const readSubdirectory = await authenticatedAgent
         .get("/api/users/directory")
@@ -593,7 +593,7 @@ describe("Directory API Tests", () => {
       expect(readSubdirectory.body.quizzes.length).toBe(0);
       expect(readSubdirectory.body.subdirectories.length).toBe(0);
       expect(readSubdirectory.body.parentDirectory).toBe(
-        getProfile.body.user.rootDir
+        getProfile.body.user.rootDir,
       );
     });
   });
@@ -607,7 +607,7 @@ describe("Directory API Tests", () => {
       const loginUser = await loginTestUser(app);
       const authenticatedAgent = await getAuthenticatedAgent(
         app,
-        loginUser.body.token
+        loginUser.body.token,
       );
 
       // Create a quiz
@@ -647,7 +647,7 @@ describe("Directory API Tests", () => {
       expect(response.status).toBe(200);
       expect(response.body.questions.length).toBe(3);
       expect(response.body.questions[2].questionTitle).toBe(
-        newQuestion.questionTitle
+        newQuestion.questionTitle,
       );
 
       // Additional assertions...
@@ -664,7 +664,7 @@ describe("Directory API Tests", () => {
       const loginUser = await loginTestUser(app);
       const authenticatedAgent = await getAuthenticatedAgent(
         app,
-        loginUser.body.token
+        loginUser.body.token,
       );
 
       // Assuming a quiz has been attempted and its ID is known
@@ -691,7 +691,7 @@ describe("Directory API Tests", () => {
 
       //get profile
       const getQuiz = await authenticatedAgent.get(
-        "/api/users/quizzes/" + quizId
+        "/api/users/quizzes/" + quizId,
       );
       expect(getQuiz.status).toBe(200);
       const question1id = getQuiz.body.questions[0]._id;
@@ -707,10 +707,10 @@ describe("Directory API Tests", () => {
 
       expect(getProfile2nd.status).toBe(200);
       expect(
-        getProfile2nd.body.directory.quizzes[0].numberOfCorrectQuestions
+        getProfile2nd.body.directory.quizzes[0].numberOfCorrectQuestions,
       ).toBe(1);
       const restartResponse = await authenticatedAgent.put(
-        `/api/users/quizzes/${quizId}/restart`
+        `/api/users/quizzes/${quizId}/restart`,
       );
       expect(restartResponse.status).toBe(200);
 
@@ -718,7 +718,7 @@ describe("Directory API Tests", () => {
 
       expect(getProfile3rd.status).toBe(200);
       expect(
-        getProfile3rd.body.directory.quizzes[0].numberOfCorrectQuestions
+        getProfile3rd.body.directory.quizzes[0].numberOfCorrectQuestions,
       ).toBe(0);
       // Further assertions based on your restart logic
     });
@@ -734,7 +734,7 @@ describe("Directory API Tests", () => {
       const loginUser = await loginTestUser(app);
       const authenticatedAgent = await getAuthenticatedAgent(
         app,
-        loginUser.body.token
+        loginUser.body.token,
       );
 
       // Assuming a quiz has been created already and its ID is known
@@ -765,12 +765,12 @@ describe("Directory API Tests", () => {
 
       const quizID = makeQuiz.body._id;
       const deleteResponse = await authenticatedAgent.delete(
-        `/api/users/quizzes/${quizID}`
+        `/api/users/quizzes/${quizID}`,
       );
       expect(deleteResponse.status).toBe(200);
       // Further assertions to confirm deletion
       const deleteResponse2 = await authenticatedAgent.delete(
-        `/api/users/quizzes/${quizID}`
+        `/api/users/quizzes/${quizID}`,
       );
       expect(deleteResponse2.status).toBe(422);
       // check that there are no quizzes in the rootDir
@@ -778,8 +778,6 @@ describe("Directory API Tests", () => {
       expect(getProfile2nd.status).toBe(200);
       expect(getProfile2nd.body.directory.quizzes.length).toBe(0);
     });
-
-
   });
 
   // // // 6 changing contents of a question
@@ -792,7 +790,7 @@ describe("Directory API Tests", () => {
       const loginUser = await loginTestUser(app);
       const authenticatedAgent = await getAuthenticatedAgent(
         app,
-        loginUser.body.token
+        loginUser.body.token,
       );
       const quiz = {
         quizTitle: "Save Study Mode Results Test",
@@ -814,7 +812,7 @@ describe("Directory API Tests", () => {
         .post("/api/users/addQuiz")
         .send(quiz);
       expect(makeQuiz.status).toBe(200);
-       const quizID = makeQuiz.body._id;
+      const quizID = makeQuiz.body._id;
       // Assuming a quiz with a specific question is known
       // const quizId = "your_quiz_id";
       const questionId = makeQuiz.body.questions[0]._id;
@@ -828,7 +826,9 @@ describe("Directory API Tests", () => {
         .put(`/api/users/quizzes/${quizID}/questions/${questionId}`)
         .send(updatedQuestion);
       expect(updateResponse.status).toBe(200);
-      expect(updateResponse.body.questionTitle).toBe(updatedQuestion.questionTitle);
+      expect(updateResponse.body.questionTitle).toBe(
+        updatedQuestion.questionTitle,
+      );
       // Additional assertions for updated question
     });
   });
@@ -863,8 +863,7 @@ describe("Directory API Tests", () => {
   //  .post("/api/users/addQuiz")
   //  .send(quiz);
   // expect(makeQuiz.status).toBe(200);
- //const quizID = makeQuiz.body._id;
-
+  //const quizID = makeQuiz.body._id;
 
   //     const deleteResponse = await authenticatedAgent.delete(
   //       `/api/users/quizzes/questions/${questionId}`
@@ -955,7 +954,7 @@ describe("Directory API Tests", () => {
   //  .post("/api/users/addQuiz")
   //  .send(quiz);
   // expect(makeQuiz.status).toBe(200);
- //const quizID = makeQuiz.body._id;
+  //const quizID = makeQuiz.body._id;
 
   //     const directoryId = "your_directory_id";
   //     const newOrder = {
@@ -1002,7 +1001,7 @@ describe("Directory API Tests", () => {
   //  .post("/api/users/addQuiz")
   //  .send(quiz);
   // expect(makeQuiz.status).toBe(200);
- //const quizID = makeQuiz.body._id;
+  //const quizID = makeQuiz.body._id;
 
   //     const directoryId = "your_subdirectory_id";
 

@@ -33,7 +33,7 @@ module.exports = function (passport) {
           }
         });
       });
-    })
+    }),
   );
 
   // JWT strategy for handling JWT tokens
@@ -48,14 +48,14 @@ module.exports = function (passport) {
           // return done(null, user);
           return done(null, {
             _id: user._id,
-            userName: user.userName,
+            username: user.username,
             rootDir: user.rootDir,
           });
         } else {
           return done(null, false);
         }
       });
-    })
+    }),
   );
 
   passport.serializeUser(function (user, done) {

@@ -13,7 +13,7 @@ function countTokens(prompt, model = "gpt2") {
   const encoding = new Tiktoken(
     cl100k_base.bpe_ranks,
     cl100k_base.special_tokens,
-    cl100k_base.pat_str
+    cl100k_base.pat_str,
   );
   const tokens = encoding.encode(prompt);
   encoding.free();
@@ -88,8 +88,6 @@ function truncateStringByToken(prompt) {
   return returnLastPeriodIndex;
 }
 
-
-
 const prompt = quizTopic;
 const tokenCount = countTokens(prompt) + 73;
 console.log(`Starting String Token count: ${tokenCount}`);
@@ -101,7 +99,7 @@ if (orgStringTknCnt > my_max_tokens) {
       orgStringTknCnt +
       " tokens long. Your prompt cannot be more than " +
       my_max_tokens +
-      " tokens, please shorten it."
+      " tokens, please shorten it.",
   );
   throw err;
 }
@@ -112,11 +110,11 @@ async function generateResponses() {
 
   const firstPrompt = generatePrompt(
     prompt.substring(0, lstPrdIdxTrncStr + 1),
-    questionCount / 2
+    questionCount / 2,
   );
 
   const sndPrompt = generateSndPrompt(
-    prompt.substring(lstPrdIdxTrncStr + 1, prompt.length, questionCount / 2)
+    prompt.substring(lstPrdIdxTrncStr + 1, prompt.length, questionCount / 2),
   );
 
   console.log("first prompt: " + firstPrompt);
@@ -179,7 +177,7 @@ async function generateResponses() {
   console.log("sndformattedResponse: " + sndCompletionText);
 
   combinedQuestions = frstResponseJSON.questions.concat(
-    sndFormattedResponse.questions
+    sndFormattedResponse.questions,
   );
 
   return combinedQuestions;

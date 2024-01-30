@@ -10,10 +10,8 @@ const userRoutes = require("./routes/user.routes.js");
 const session = require("express-session");
 const passport = require("passport");
 
-
 // Passport config
 require("./config/passport")(passport);
-
 
 // express session
 app.use(
@@ -21,14 +19,12 @@ app.use(
     secret: "secret",
     resave: true,
     saveUninitialized: true,
-  })
-)
+  }),
+);
 
 // Passport middleware
 app.use(passport.initialize());
 app.use(passport.session());
-
-
 
 app.use(cors()); // go through cors policy for requests
 
