@@ -109,6 +109,7 @@ exports.getQuiz = async (req, res) => {
     if (quiz) {
       // Send response here
       res.status(200).json(quiz);
+      return;
     } else {
       // Send response here
       res.status(404).json({ error: `Quiz with ID ${quizId} does not exist` });

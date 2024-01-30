@@ -7,9 +7,12 @@ const directoryController = require("../controllers/directory.controller.js");
 const quizController = require("../controllers/quiz.controller.js");
 const db = require("../models/index"); // retrieve mongo connection
 
+const multer = require("multer"); // Middleware for handling multipart/form-data
+const upload = multer(); // Create an instance of multer
+
 let User = db.mongoose.connection.model(
   "User",
-  require("../models/user.model"),
+  require("../models/user.model")
 );
 
 // Middleware to verify token
@@ -58,14 +61,26 @@ router.get("/logout", (req, res) => {
 router.get("/profile", verifyToken, userService.getUserProfile);
 router.delete("/delete", verifyToken, userService.deleteUserAccount);
 
+
 // Quiz Routes
 router.post("/addQuiz", verifyToken, (req, res) => {
   // Set the directoryId to the user's rootDir before calling addQuiz
   req.body.directoryId = req.body.directoryId || req.user.rootDir._id;
   quizController.addQuiz(req, res);
 });
-router.put("/quizzes/rename/:id", verifyToken, quizController.renameItem);
+router.post("/quizzes/openai", upload.none(), verifyToken, async (req, res) => {
+  req.body.directoryId = req.body.directoryId || req.user.rootDir._id;
+  quizController
+    .addQuizWithAI(req.body, res)
+    .then((data) => {
+      res.json(data);
+    })
+    .catch((msg) => {
+      res.status(422).json({ error: msg });
+    });
+});
 router.get("/quizzes/:id", verifyToken, quizController.getQuiz);
+router.put("/quizzes/rename/:id", verifyToken, quizController.renameItem);
 router.put("/quizzes/moveQuiz", verifyToken, (req, res) => {
   directoryController
     .moveQuiz(req, res)
@@ -79,19 +94,19 @@ router.put("/quizzes/moveQuiz", verifyToken, (req, res) => {
 router.put(
   "/quizzes/:id/questions/add",
   verifyToken,
-  quizController.addQuestion,
+  quizController.addQuestion
 );
 router.put(
   "/quizzes/:id/markCorrect",
   verifyToken,
-  quizController.markQuestionsCorrect,
+  quizController.markQuestionsCorrect
 );
 router.put("/quizzes/:id/restart", verifyToken, quizController.restartQuiz);
 router.delete("/quizzes/:id", verifyToken, quizController.deleteQuiz);
 router.put(
   "/quizzes/:id/questions/:questionId",
   verifyToken,
-  quizController.updateQuestion,
+  quizController.updateQuestion
 );
 
 // Directory Routes
@@ -113,22 +128,22 @@ router.get("/directory/:directoryId", verifyToken, (req, res) => {
 router.put(
   "/directory/:directoryId/move",
   verifyToken,
-  directoryController.moveDirectory,
+  directoryController.moveDirectory
 );
 router.put(
   "/directory/:directoryId/rename",
   verifyToken,
-  directoryController.renameDirectory,
+  directoryController.renameDirectory
 );
 router.put(
   "/directory/:directoryId/switchOrder",
   verifyToken,
-  directoryController.switchOrder,
+  directoryController.switchOrder
 );
 router.delete(
   "/directory/:directoryId",
   verifyToken,
-  directoryController.deleteDirectory,
+  directoryController.deleteDirectory
 );
 
 module.exports = router;
