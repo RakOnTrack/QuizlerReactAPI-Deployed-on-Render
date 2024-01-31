@@ -61,7 +61,6 @@ router.get("/logout", (req, res) => {
 router.get("/profile", verifyToken, userService.getUserProfile);
 router.delete("/delete", verifyToken, userService.deleteUserAccount);
 
-
 // Quiz Routes
 router.post("/addQuiz", verifyToken, (req, res) => {
   // Set the directoryId to the user's rootDir before calling addQuiz
@@ -110,20 +109,20 @@ router.put(
 );
 
 // Directory Routes
-router.post("/addDirectory", verifyToken, (req, res) => {
-  req.body.parentDirectoryId = req.user.rootDir._id || req.body.parentId;
-  directoryController.createDirectory(req, res);
-});
 router.get("/directory", verifyToken, (req, res) => {
   req.params.id = req.body.id || req.user.rootDir;
   directoryController
     .readDirectory(req, res)
     .then((directory) => res.json(directory));
 });
-router.get("/directory/:directoryId", verifyToken, (req, res) => {
-  directoryController // i might want to use this instead of using req.body.id.
+router.get("/directory/:id", verifyToken, (req, res) => {
+  directoryController
     .readDirectory(req, res)
     .then((directory) => res.json(directory));
+});
+router.post("/addDirectory", verifyToken, (req, res) => {
+  req.body.parentDirectoryId = req.user.rootDir._id || req.body.parentId;
+  directoryController.createDirectory(req, res);
 });
 router.put(
   "/directory/:directoryId/move",
@@ -135,6 +134,7 @@ router.put(
   verifyToken,
   directoryController.renameDirectory
 );
+
 router.put(
   "/directory/:directoryId/switchOrder",
   verifyToken,
