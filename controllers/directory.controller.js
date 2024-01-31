@@ -2,11 +2,11 @@ const db = require("../models/index"); // retrieve mongo connection
 
 let Quiz = db.mongoose.connection.model(
   "Quizzes",
-  require("../models/quiz.model")
+  require("../models/quiz.model"),
 );
 let Directory = db.mongoose.connection.model(
   "Directory",
-  require("../models/directory.model")
+  require("../models/directory.model"),
 );
 
 // Creating a new directory
@@ -157,7 +157,7 @@ exports.readDirectory = async (req, res) => {
           (count, question) => {
             return count + (question.isCorrect === true ? 1 : 0);
           },
-          0
+          0,
         );
 
         return {
@@ -166,7 +166,7 @@ exports.readDirectory = async (req, res) => {
           numberOfQuestions: quiz.questions.length,
           numberOfCorrectQuestions: numberOfCorrectQuestions,
         };
-      })
+      }),
     );
 
     // Format result directory
@@ -228,7 +228,7 @@ exports.moveDirectory = async (req, res) => {
         originalParentDirectory.subdirectories =
           //removing the directory by only keeping subdirectories that dont match the directoryID.
           originalParentDirectory.subdirectories.filter(
-            (sub) => sub.toString() !== directoryId
+            (sub) => sub.toString() !== directoryId,
           );
         await originalParentDirectory.save();
       }
@@ -266,7 +266,7 @@ exports.renameDirectory = async (req, res) => {
     const updatedDir = await Directory.findByIdAndUpdate(
       directoryId,
       { name: newTitle },
-      { new: true }
+      { new: true },
     ).exec();
 
     if (updatedDir) {
@@ -447,7 +447,7 @@ exports.moveQuiz = async (req, res) => {
 
     // 3. Remove the quiz _id from the original parent directory.
     originalDirectory.quizzes = originalDirectory.quizzes.filter(
-      (quizIdInArray) => quizIdInArray.toString() !== quizId.toString()
+      (quizIdInArray) => quizIdInArray.toString() !== quizId.toString(),
     );
 
     // Save changes to all affected documents

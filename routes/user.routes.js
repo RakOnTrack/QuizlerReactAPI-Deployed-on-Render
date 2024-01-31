@@ -12,7 +12,7 @@ const upload = multer(); // Create an instance of multer
 
 let User = db.mongoose.connection.model(
   "User",
-  require("../models/user.model")
+  require("../models/user.model"),
 );
 
 // Middleware to verify token
@@ -93,19 +93,19 @@ router.put("/quizzes/moveQuiz", verifyToken, (req, res) => {
 router.put(
   "/quizzes/:id/questions/add",
   verifyToken,
-  quizController.addQuestion
+  quizController.addQuestion,
 );
 router.put(
   "/quizzes/:id/markCorrect",
   verifyToken,
-  quizController.markQuestionsCorrect
+  quizController.markQuestionsCorrect,
 );
 router.put("/quizzes/:id/restart", verifyToken, quizController.restartQuiz);
 router.delete("/quizzes/:id", verifyToken, quizController.deleteQuiz);
 router.put(
   "/quizzes/:id/questions/:questionId",
   verifyToken,
-  quizController.updateQuestion
+  quizController.updateQuestion,
 );
 
 // Directory Routes
@@ -127,23 +127,23 @@ router.post("/addDirectory", verifyToken, (req, res) => {
 router.put(
   "/directory/:directoryId/move",
   verifyToken,
-  directoryController.moveDirectory
+  directoryController.moveDirectory,
 );
 router.put(
   "/directory/:directoryId/rename",
   verifyToken,
-  directoryController.renameDirectory
+  directoryController.renameDirectory,
 );
 
 router.put(
   "/directory/:directoryId/switchOrder",
   verifyToken,
-  directoryController.switchOrder
+  directoryController.switchOrder,
 );
 router.delete(
   "/directory/:directoryId",
   verifyToken,
-  directoryController.deleteDirectory
+  directoryController.deleteDirectory,
 );
 
 module.exports = router;
