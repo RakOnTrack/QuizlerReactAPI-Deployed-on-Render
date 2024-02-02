@@ -88,10 +88,10 @@ module.exports.createUser = async (req, res) => {
 // Login user
 module.exports.loginUser = async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const { email, password } = req.body;
 
     // Find the user by username
-    const user = await User.findOne({ username: username });
+    const user = await User.findOne({ email: email });
     if (!user) {
       return res.status(401).json({ message: "Invalid username or password" });
     }
