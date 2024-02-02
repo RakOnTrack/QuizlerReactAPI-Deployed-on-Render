@@ -11,9 +11,10 @@ let Directory = db.mongoose.connection.model(
 
 // Creating a new directory
 exports.createDirectory = async (req, res) => {
-  let name = req.body.name;
+  let name = req.body.name || "no name";
   let isRoot = req.body.isRoot || false;
-  let parentDirectoryId = req.user.rootDir;
+  // let parentDirectoryId = req.user.rootDir || null;
+  let parentDirectoryId = req.user ? req.user.rootDir : null;
   // ? null
   // : req.body.parentDirectoryId || process.env.DEFAULT_ROOT_DIRECTORY;
 

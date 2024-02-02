@@ -19,7 +19,7 @@ const directorySchema = new mongoose.Schema({
   parentDirectory: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Directory",
-    default: process.env.DEFAULT_ROOT_DIRECTORY, // Set the default value to homeroute for no parent directory
+    default: null // Set the default value to homeroute for no parent directory
   },
   owner: {
     type: mongoose.Schema.Types.ObjectId,

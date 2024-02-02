@@ -26,14 +26,17 @@ module.exports.createUser = async (req, res) => {
   let { username, password, password2, email } = req.body;
   try {
     // Check if values are valid
-    if (!username || !password) {
+    if (!username || !password || !password2 || !email) {
       res.status(400).json({ error: "Invalid values" });
       return;
     }
 
-    // if (password.length < 6) {
-    //   res.status(400).json({ error: "Password must be at least 6 characters" });
-    // }
+    if (username.length < 4) {
+      return res.status(400).json({ error: "Username must be at least 4 characters" });
+    }
+    if (password.length < 6) {
+      return res.status(400).json({ error: "Password must be at least 6 characters" });
+    }
 
     // Check if user exists
     const user = await User.findOne({ username: username });
@@ -60,6 +63,7 @@ module.exports.createUser = async (req, res) => {
       // password = hash;
 
       req.body.isRoot = true; // Add isRoot property to req object
+      req.user = { rootDir: null };
       const rootDir = await directoryService.createDirectory(req, res);
 
       let newUser = new User({
@@ -69,12 +73,12 @@ module.exports.createUser = async (req, res) => {
         email: email,
       });
 
-      newUser.save();
-      res.send("User " + newUser.username + " successfully registered");
+      await newUser.save();
+      return res.send("User " + newUser.username + " successfully registered");
     }
   } catch (err) {
     if (err.code == 11000) {
-      res.send("User Name already taken");
+      res.send("User Name already taken" + err);
     } else {
       res.send("There was an error creating the user: " + err);
     }
