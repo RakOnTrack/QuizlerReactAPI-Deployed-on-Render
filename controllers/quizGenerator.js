@@ -11,7 +11,7 @@ function countTokens(prompt, model = "gpt2") {
   const encoding = new Tiktoken(
     cl100k_base.bpe_ranks,
     cl100k_base.special_tokens,
-    cl100k_base.pat_str,
+    cl100k_base.pat_str
   );
   const tokens = encoding.encode(prompt);
   encoding.free();
@@ -23,88 +23,127 @@ function truncateStringByToken(quizTopic, max_tokens) {
   const MAXINPUTTOKENS = max_tokens / 2;
   const tokenCount = countTokens(quizTopic);
   console.log(`Token count : ${tokenCount}`);
-  let returnLastPeriodIndex = quizTopic.length;
 
-  if (tokenCount > MAXINPUTTOKENS) {
-    const truncatePercentage = MAXINPUTTOKENS / tokenCount;
-    const truncateIndex = Math.floor(quizTopic.length * truncatePercentage);
-    const revisedPrompt = quizTopic.substring(0, truncateIndex);
-
-    let lastPeriodIndex = -1;
-    for (let i = revisedPrompt.length - 1; i >= 0; i--) {
-      if (revisedPrompt[i] === ".") {
-        lastPeriodIndex = i;
-        break;
-      }
-    }
-
-    if (lastPeriodIndex !== -1) {
-      const finalPrompt = revisedPrompt.substring(0, lastPeriodIndex + 1);
-      console.log(`Token count first Half: ${countTokens(finalPrompt)}`);
-      returnLastPeriodIndex = lastPeriodIndex;
-    }
-  } else if (tokenCount > max_tokens) {
-    console.log(
-      "Sorry, your prompt is " +
-        orgStringTknCnt +
-        " tokens long. Your prompt cannot be more than " +
-        my_max_tokens +
-        " tokens, please shorten it.",
-    );
-    throw err;
+  // If the total number of tokens is less than or equal to MAXINPUTTOKENS, no truncation is needed.
+  if (tokenCount <= MAXINPUTTOKENS) {
+    return quizTopic.length; // Return the full length since no truncation is needed.
   }
-  return returnLastPeriodIndex;
+
+  const middleIndex = Math.floor(quizTopic.length / 2);
+
+  // Find the first period before the middle index to ensure we end at a complete sentence
+  let lastPeriodIndex = quizTopic.lastIndexOf(".", middleIndex);
+
+  // If no period is found in the first half, it's better to keep the whole string rather than cut in the middle of a sentence.
+  // But for the purpose of following the instructions strictly, fallback to the middle index.
+  if (lastPeriodIndex === -1) lastPeriodIndex = middleIndex;
+
+  console.log(`Truncate index: ${lastPeriodIndex}`);
+  return lastPeriodIndex;
+}
+
+async function makeSecondParseAttemptWithAI(jsonContent) {
+  // Create a more detailed and specific prompt for the AI
+  const prompt = `
+  Given the following JSON string representing quiz data, it appears that the last 
+  question may be incomplete, leading to syntax errors preventing the string from 
+  being parsed using JSON.parse() in JavaScript. Please remove any incomplete content
+  at the end, ensure that the last question is fully complete, and properly close the JSON
+  object with the necessary closing braces. Return the corrected and complete JSON string.
+  
+  Original JSON string with potential incomplete content:
+  -----------------------------------
+  ${jsonContent}
+  -----------------------------------
+  
+  Ensure the final JSON string is well-formed, with all objects and arrays properly closed,
+   and can be parsed without errors. Provide the corrected JSON string below.
+  `;
+
+  let messages = [{ role: "user", content: prompt }];
+
+  const completion = await openai.chat.completions.create({
+    model: "ft:gpt-3.5-turbo-0613:personal::8GHsfxGO",
+    messages: messages,
+    temperature: 0.0,
+    max_tokens: 1000,
+  });
+
+  let response = completion.choices[0].message.content;
+  let responseJSON;
+  try {
+    responseJSON = JSON.parse(response);
+    console.log("Parsed JSON successfully on second try.");
+  } catch (error) {
+    console.error("Failed to parse JSON:", error);
+  }
+  return responseJSON;
 }
 
 function generatePrompt(studyContent, questionCount) {
   return `
-  Make me a multiple-choice quiz with ${questionCount} questions about this content:
-  
-  ${studyContent}. 
-  
-  The quiz should be in this JSON format:
-  
-  {
-    "quizTitle": STRING,
-    "questions": [
-      {
-        "questionTitle": "",
-        "correct_answer": "",
-        "incorrect_answers": []
-      },
-      ...
-    ]
-  }
+Please create a multiple-choice quiz based on the provided content. The quiz 
+should have exactly ${questionCount} questions. Each question must include 
+one correct answer and multiple incorrect answers. Follow the JSON structure 
+below for formatting the quiz:
+
+{
+  "quizTitle": "REPLACE_WITH_A_RELEVANT_TITLE",
+  "questions": [
+    {
+      "questionTitle": "REPLACE_WITH_QUESTION",
+      "correct_answer": "REPLACE_WITH_CORRECT_ANSWER",
+      "incorrect_answers": [
+        "REPLACE_WITH_INCORRECT_ANSWER_1",
+        "REPLACE_WITH_INCORRECT_ANSWER_2",
+        "REPLACE_WITH_INCORRECT_ANSWER_3"
+      ]
+    }
+    // Repeat this question structure ${questionCount} times
+  ]
+}
+
+Content for quiz creation:
+"${studyContent}"
+
+Ensure the quiz title is relevant to the content provided. If the content is 
+insufficient for ${questionCount} questions, use your best judgment to create 
+relevant, engaging questions. Each question should be unique and provide a clear 
+choice between the correct and incorrect answers.
 `;
 }
 
 function generateSndPrompt(quizTopic, studyContent, questionCount) {
   return `
-    Generate ${questionCount} additional multiple-choice questions for the quiz on ${quizTopic}. Consider the following content:
+Based on the topic "${quizTopic}" and the additional content provided below, 
+generate ${questionCount} new multiple-choice questions to expand the existing quiz.
+ Ensure each new question includes one correct answer and multiple incorrect answers.
+  Use the JSON format as shown:
 
-    ${studyContent}.
-
-    Provide the questions in the following JSON format:
-
+{
+  "quizTitle": "${quizTopic}",
+  "questions": [
     {
-      "quizTitle": "YourQuizTitle",
-      "questions": [
-        {
-          "questionTitle": "Question 1",
-          "correct_answer": "Correct Answer 1",
-          "incorrect_answers": ["Incorrect Answer 1", "Incorrect Answer 2", "Incorrect Answer 3"]
-        },
-        {
-          "questionTitle": "Question 2",
-          "correct_answer": "Correct Answer 2",
-          "incorrect_answers": ["Incorrect Answer 1", "Incorrect Answer 2", "Incorrect Answer 3"]
-        },
-        ...
+      "questionTitle": "REPLACE_WITH_NEW_QUESTION",
+      "correct_answer": "REPLACE_WITH_CORRECT_ANSWER",
+      "incorrect_answers": [
+        "REPLACE_WITH_INCORRECT_ANSWER_1",
+        "REPLACE_WITH_INCORRECT_ANSWER_2",
+        "REPLACE_WITH_INCORRECT_ANSWER_3"
       ]
     }
+    // Include additional questions to meet the total count of ${questionCount}
+  ]
+}
 
-    Note: Consider the quizTitle "${quizTopic}" when generating questions to maintain context.
-  `;
+Additional content for question generation:
+"${studyContent}"
+
+Each question should be distinct and relevant to the quiz topic, providing
+educational value and challenging the quiz taker's understanding of the subject. 
+If necessary, creatively use the provided content to formulate questions that fit 
+the quiz topic.
+`;
 }
 
 async function generateQuiz(quizTopic, questionCount = 10) {
@@ -114,7 +153,7 @@ async function generateQuiz(quizTopic, questionCount = 10) {
 
   const firstPrompt = generatePrompt(
     quizTopic.substring(0, lstPrdIdxTrncStr + 1),
-    questionCount / 2,
+    questionCount / 2
   );
 
   console.log("first prompt: " + firstPrompt);
@@ -127,7 +166,7 @@ async function generateQuiz(quizTopic, questionCount = 10) {
       model: "ft:gpt-3.5-turbo-0613:personal::8GHsfxGO",
       messages: messages,
       temperature: 0.0,
-      max_tokens: 800,
+      max_tokens: 1000,
     });
 
     firstResponse = completion.choices[0].message.content;
@@ -164,19 +203,25 @@ async function generateQuiz(quizTopic, questionCount = 10) {
       ]
     }`;
   }
-
-  const frstResponseJSON = JSON.parse(firstResponse);
+  let frstResponseJSON;
+  try {
+    frstResponseJSON = JSON.parse(firstResponse);
+  } catch (err) {
+    console.error("Failed to parse JSON:", err);
+    frstResponseJSON = await makeSecondParseAttemptWithAI(firstResponse);
+  }
   console.log("first Response!: " + firstResponse);
 
   console.log("finished first Completion");
 
   const sndPrompt = generateSndPrompt(
     frstResponseJSON.quizTitle,
+    //quiz content from last period index of the truncated string
     quizTopic.substring(
       lstPrdIdxTrncStr + 1,
       quizTopic.length,
-      questionCount / 2,
-    ),
+      questionCount / 2
+    )
   );
   console.log("\nsecond prompt: " + sndPrompt);
 
@@ -189,7 +234,7 @@ async function generateQuiz(quizTopic, questionCount = 10) {
       model: "ft:gpt-3.5-turbo-0613:personal::8GHsfxGO",
       messages: messages,
       temperature: 0.0,
-      max_tokens: 800,
+      max_tokens: 1000,
     });
 
     sndCompletionText = sndCompletion.choices[0].message.content;
@@ -226,12 +271,29 @@ async function generateQuiz(quizTopic, questionCount = 10) {
     }`;
   }
 
-  const sndFormattedResponse = JSON.parse(sndCompletionText);
+  let sndFormattedResponse;
+  try {
+    sndFormattedResponse = JSON.parse(sndCompletionText);
+  } catch (err) {
+    console.error("Failed to parse JSON:", err);
+    sndFormattedResponse =
+      await makeSecondParseAttemptWithAI(sndCompletionText);
+  }
+
   console.log("sndformattedResponse: " + sndCompletionText);
 
   frstResponseJSON.questions = frstResponseJSON.questions.concat(
-    sndFormattedResponse.questions,
+    sndFormattedResponse.questions
   );
+
+  // Ensure the correct number of questions
+  if (frstResponseJSON.questions.length > questionCount) {
+    // If too many questions, remove the excess.
+    frstResponseJSON.questions = frstResponseJSON.questions.slice(
+      0,
+      questionCount
+    );
+  }
 
   return frstResponseJSON;
 }
@@ -239,22 +301,3 @@ async function generateQuiz(quizTopic, questionCount = 10) {
 module.exports = {
   generateQuiz,
 };
-
-// async function main() {
-//   try {
-//     const quizTopic = `"In the heart of a bustling city, people from all walks of life come together to celebrate their shared passions.
-//         The streets are alive with the rhythms of diverse cultures, and the aroma of street food fills the air. It's a place where art,
-//         music, and technology intersect, creating a vibrant and dynamic atmosphere. In this urban playground, creativity knows no bounds,
-//         and innovation thrives. As the sun sets, the city's skyline illuminates, casting a mesmerizing glow on the horizon. It's a place of
-//         endless possibilities, where dreams are pursued and stories are written."
-
-//         Please note that the token count can vary depending on the language model or text encoding being used. The above text is an approximate 150 tokens long using a typical English-based model.`;
-
-//     const questions = await generateQuiz(quizTopic);
-//     console.log("question count: " + questions.length);
-//   } catch (error) {
-//     console.error("An error occurred:", error);
-//   }
-// }
-
-// main();

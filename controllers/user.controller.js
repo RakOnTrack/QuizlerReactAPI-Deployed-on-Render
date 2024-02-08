@@ -93,13 +93,13 @@ module.exports.loginUser = async (req, res) => {
     // Find the user by username
     const user = await User.findOne({ email: email });
     if (!user) {
-      return res.status(401).json({ message: "Invalid username or password" });
+      return res.status(401).json({ message: "Invalid username" });
     }
 
     // Check if the password is correct
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      return res.status(401).json({ message: "Invalid username or password" });
+      return res.status(401).json({ message: "Invalid password" });
     }
 
     // Prepare JWT payload
