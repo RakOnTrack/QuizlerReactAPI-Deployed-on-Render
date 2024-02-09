@@ -146,6 +146,21 @@ the quiz topic.
 `;
 }
 
+function removeDuplicateQuestions(quiz) {
+  const seenTitles = new Set();
+  const uniqueQuestions = quiz.questions.filter((question) => {
+    if (!seenTitles.has(question.questionTitle)) {
+      seenTitles.add(question.questionTitle);
+      return true;
+    }
+    return false;
+  });
+  return {
+    ...quiz,
+    questions: uniqueQuestions,
+  };
+}
+
 async function generateQuiz(quizTopic, questionCount = 10) {
   const max_tokens = 6000;
 
@@ -286,10 +301,12 @@ async function generateQuiz(quizTopic, questionCount = 10) {
     sndFormattedResponse.questions
   );
 
+  const deduplicatedQuiz = removeDuplicateQuestions(frstResponseJSON);
+
   // Ensure the correct number of questions
-  if (frstResponseJSON.questions.length > questionCount) {
+  if (deduplicatedQuiz.questions.length > questionCount) {
     // If too many questions, remove the excess.
-    frstResponseJSON.questions = frstResponseJSON.questions.slice(
+    deduplicatedQuiz.questions = deduplicatedQuiz.questions.slice(
       0,
       questionCount
     );
