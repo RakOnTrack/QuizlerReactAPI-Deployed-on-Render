@@ -4,18 +4,18 @@ const userSchema = new mongoose.Schema({
   username: {
     type: String,
     unique: true,
-    required: true
+    required: true,
   },
   password: String,
   rootDir: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Directory",
-    required: true
+    required: true,
   },
   email: {
     type: String,
     unique: true,
-    required: true
+    required: true,
   },
 });
 

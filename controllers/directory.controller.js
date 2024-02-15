@@ -358,7 +358,7 @@ exports.switchOrder = async (req, res) => {
 
 // Recursively deleting a directory and its items
 exports.deleteDirectory = async (req, res, flag = true) => {
-  let directoryId = req.body.directoryId;
+  let directoryId = req.body.directoryId || req.params.id;
 
   try {
     const directory = await Directory.findById(directoryId);

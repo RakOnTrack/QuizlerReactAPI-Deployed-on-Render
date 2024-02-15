@@ -1,5 +1,20 @@
 const mongoose = require("mongoose");
 
+// Define the schema for OpenAI function input/output results
+const openAIIOFunctionResultsSchema = new mongoose.Schema(
+  {
+    input: {
+      type: String,
+      required: true,
+    },
+    output: {
+      type: String,
+      required: true,
+    },
+  },
+  { timestamps: true },
+); // Including timestamps to track when each interaction occurred
+
 const quizSchema = new mongoose.Schema({
   quizTitle: String,
   questions: [

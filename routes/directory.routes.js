@@ -33,6 +33,6 @@ router.put("/rename", directoryService.renameDirectory);
 router.put("/switch-order", directoryService.switchOrder);
 
 // Route for deleting a directory
-router.delete("/", directoryService.deleteDirectory);
+router.delete("/:id", directoryService.deleteDirectory);
 
 module.exports = router;

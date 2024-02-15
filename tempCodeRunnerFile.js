@@ -51,13 +51,10 @@ try {
   const frstResponseJSON = JSON.parse(correctedJson);
   console.log("Parsed JSON successfully:", frstResponseJSON);
 } catch (error) {
-
-
-  const firstPrompt = "this content i have is having an error being JSON.parse(). Can you please fix this ? " + correctedJson;
+  const firstPrompt =
+    "this content i have is having an error being JSON.parse(). Can you please fix this ? " +
+    correctedJson;
   let messages = [{ role: "user", content: firstPrompt }];
-
-
-
 
   const completion = await openai.chat.completions.create({
     model: "ft:gpt-3.5-turbo-0613:personal::8GHsfxGO",
