@@ -1,5 +1,11 @@
 const { Tiktoken } = require("@dqbd/tiktoken/lite");
 const cl100k_base = require("@dqbd/tiktoken/encoders/cl100k_base.json");
+const db = require("../models/index"); // retrieve mongo connection
+
+let aiRecord = db.mongoose.connection.model(
+  "aiRecords",
+  require("../models/openAiRecord.model.js")
+);
 
 const OpenAI = require("openai");
 require("dotenv").config();
@@ -11,7 +17,7 @@ function countTokens(prompt, model = "gpt2") {
   const encoding = new Tiktoken(
     cl100k_base.bpe_ranks,
     cl100k_base.special_tokens,
-    cl100k_base.pat_str,
+    cl100k_base.pat_str
   );
   const tokens = encoding.encode(prompt);
   encoding.free();
@@ -166,9 +172,21 @@ async function generateQuiz(quizTopic, questionCount = 10) {
 
   const lstPrdIdxTrncStr = truncateStringByToken(quizTopic, max_tokens);
 
+  let quizOutput; // This will hold the final output JSON string
+  let successFlag = false; // This will indicate the success of the operation
+
+  // Create the aiRecord with the collected data
+  const aiRecordInstance = new aiRecord({
+    inputString: quizTopic,
+    questionCount: questionCount,
+    // output: quizOutput,
+    // success: successFlag,
+  });
+  await aiRecordInstance.save();
+
   const firstPrompt = generatePrompt(
     quizTopic.substring(0, lstPrdIdxTrncStr + 1),
-    questionCount / 2,
+    questionCount / 2
   );
 
   console.log("first prompt: " + firstPrompt);
@@ -235,8 +253,8 @@ async function generateQuiz(quizTopic, questionCount = 10) {
     quizTopic.substring(
       lstPrdIdxTrncStr + 1,
       quizTopic.length,
-      questionCount / 2,
-    ),
+      questionCount / 2
+    )
   );
   console.log("\nsecond prompt: " + sndPrompt);
 
@@ -298,21 +316,26 @@ async function generateQuiz(quizTopic, questionCount = 10) {
   console.log("sndformattedResponse: " + sndCompletionText);
 
   frstResponseJSON.questions = frstResponseJSON.questions.concat(
-    sndFormattedResponse.questions,
+    sndFormattedResponse.questions
   );
 
-  const deduplicatedQuiz = removeDuplicateQuestions(frstResponseJSON);
+  const duplicatedQuiz = removeDuplicateQuestions(frstResponseJSON);
 
   // Ensure the correct number of questions
-  if (deduplicatedQuiz.questions.length > questionCount) {
+  if (duplicatedQuiz.questions.length > questionCount) {
     // If too many questions, remove the excess.
-    deduplicatedQuiz.questions = deduplicatedQuiz.questions.slice(
+    duplicatedQuiz.questions = duplicatedQuiz.questions.slice(
       0,
-      questionCount,
+      questionCount
     );
   }
 
-  return frstResponseJSON;
+  aiRecordInstance.output = JSON.stringify(duplicatedQuiz);
+  aiRecordInstance.success = true;
+  aiRecordInstance.questionCountOutput = duplicatedQuiz.questions.length;
+  await aiRecordInstance.save();
+
+  return duplicatedQuiz;
 }
 
 module.exports = {
