@@ -13,7 +13,7 @@ const openAiRecordSchema = new mongoose.Schema(
     },
     output: {
       type: String,
-    //   required: true,
+      //   required: true,
     },
     success: {
       type: Boolean,
@@ -23,7 +23,7 @@ const openAiRecordSchema = new mongoose.Schema(
       type: Number,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 ); // Including timestamps to track when each interaction occurred
 
 module.exports = openAiRecordSchema;

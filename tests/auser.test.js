@@ -41,6 +41,7 @@ async function createNewUser(app) {
       username: "testUser" + ++userCount, // Unique username
       password: "testPassword",
       password2: "testPassword",
+      email: "dumbEmail@hotmail.com" + userCount,
     });
 
   return postResult;

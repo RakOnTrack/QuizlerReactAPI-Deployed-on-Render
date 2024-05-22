@@ -4,7 +4,7 @@ const db = require("../models/index"); // retrieve mongo connection
 
 let aiRecord = db.mongoose.connection.model(
   "aiRecords",
-  require("../models/openAiRecord.model.js")
+  require("../models/openAiRecord.model.js"),
 );
 
 const OpenAI = require("openai");
@@ -17,7 +17,7 @@ function countTokens(prompt, model = "gpt2") {
   const encoding = new Tiktoken(
     cl100k_base.bpe_ranks,
     cl100k_base.special_tokens,
-    cl100k_base.pat_str
+    cl100k_base.pat_str,
   );
   const tokens = encoding.encode(prompt);
   encoding.free();
@@ -72,7 +72,7 @@ async function makeSecondParseAttemptWithAI(jsonContent) {
     model: "ft:gpt-3.5-turbo-0613:personal::8GHsfxGO",
     messages: messages,
     temperature: 0.0,
-    max_tokens: 1000,
+    max_tokens: 2000,
   });
 
   let response = completion.choices[0].message.content;
@@ -186,7 +186,7 @@ async function generateQuiz(quizTopic, questionCount = 10) {
 
   const firstPrompt = generatePrompt(
     quizTopic.substring(0, lstPrdIdxTrncStr + 1),
-    questionCount / 2
+    questionCount / 2,
   );
 
   console.log("first prompt: " + firstPrompt);
@@ -199,7 +199,7 @@ async function generateQuiz(quizTopic, questionCount = 10) {
       model: "ft:gpt-3.5-turbo-0613:personal::8GHsfxGO",
       messages: messages,
       temperature: 0.0,
-      max_tokens: 1000,
+      max_tokens: 1500,
     });
 
     firstResponse = completion.choices[0].message.content;
@@ -253,8 +253,8 @@ async function generateQuiz(quizTopic, questionCount = 10) {
     quizTopic.substring(
       lstPrdIdxTrncStr + 1,
       quizTopic.length,
-      questionCount / 2
-    )
+      questionCount / 2,
+    ),
   );
   console.log("\nsecond prompt: " + sndPrompt);
 
@@ -267,7 +267,7 @@ async function generateQuiz(quizTopic, questionCount = 10) {
       model: "ft:gpt-3.5-turbo-0613:personal::8GHsfxGO",
       messages: messages,
       temperature: 0.0,
-      max_tokens: 1000,
+      max_tokens: 1500,
     });
 
     sndCompletionText = sndCompletion.choices[0].message.content;
@@ -316,7 +316,7 @@ async function generateQuiz(quizTopic, questionCount = 10) {
   console.log("sndformattedResponse: " + sndCompletionText);
 
   frstResponseJSON.questions = frstResponseJSON.questions.concat(
-    sndFormattedResponse.questions
+    sndFormattedResponse.questions,
   );
 
   const duplicatedQuiz = removeDuplicateQuestions(frstResponseJSON);
@@ -324,10 +324,7 @@ async function generateQuiz(quizTopic, questionCount = 10) {
   // Ensure the correct number of questions
   if (duplicatedQuiz.questions.length > questionCount) {
     // If too many questions, remove the excess.
-    duplicatedQuiz.questions = duplicatedQuiz.questions.slice(
-      0,
-      questionCount
-    );
+    duplicatedQuiz.questions = duplicatedQuiz.questions.slice(0, questionCount);
   }
 
   aiRecordInstance.output = JSON.stringify(duplicatedQuiz);
