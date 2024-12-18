@@ -9,7 +9,7 @@ const directoryController = require("./directory.controller.js");
 const quizController = require("./quiz.controller.js");
 let User = db.mongoose.connection.model(
   "User",
-  require("../models/user.model"),
+  require("../models/user.model")
 );
 const { createDirectory } = directoryController;
 
@@ -19,6 +19,82 @@ const jwtOptions = {
 };
 
 // let User = models.userSchema;
+const crypto = require("crypto"); // For generating unique temporary usernames
+
+module.exports.createTemporaryUser = async (req, res) => {
+  try {
+    // Generate a random username
+    const username = "Guest_" + crypto.randomBytes(4).toString("hex");
+
+    // Create a default root directory for the guest user
+
+    req.body.isRoot = true; // Add isRoot property to req object
+    req.body.name = "Guest Directory"; // Add isRoot property to req object
+    req.user = { rootDir: null };
+    const rootDir = await directoryService.createDirectory(req, res);
+
+    // const rootDir = await directoryService.createDirectory({ name: "Guest Directory" });
+
+    // Create a new temporary user
+    const newUser = new User({
+      username,
+      password: null, // No password for guest users
+      email: `${username}@tempuser.com`, // No email for guest users
+      rootDir: rootDir._id,
+      isTemporary: true, // Mark as a temporary user
+    });
+
+    await newUser.save();
+
+    // Generate a token for the temporary user
+    const payload = {
+      _id: newUser._id,
+      username: newUser.username,
+      rootDir: newUser.rootDir,
+    };
+
+    const token = jwt.sign(payload, jwtOptions.secretOrKey, {
+      expiresIn: "1h", // Temporary user session expires in 1 hour
+    });
+
+    res.json({ token, message: "Temporary user created", userId: newUser._id });
+  } catch (error) {
+    console.error("Error creating temporary user:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+module.exports.convertTemporaryUser = async (req, res) => {
+  try {
+    const { email, password, password2 } = req.body;
+    const userId = req.user._id; // Assuming the user is authenticated as a guest
+
+    if (!email || !password || password !== password2) {
+      return res.status(400).json({ message: "Invalid input." });
+    }
+
+    const user = await User.findById(userId);
+    if (!user || !user.isTemporary) {
+      return res
+        .status(400)
+        .json({ message: "User not eligible for conversion." });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hash = await bcrypt.hash(password, salt);
+
+    // Update the user record
+    user.email = email;
+    user.password = hash;
+    user.isTemporary = false;
+    await user.save();
+
+    res.json({ message: "Account converted successfully!" });
+  } catch (error) {
+    console.error("Error converting temporary user:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
 
 // Create a new user
 module.exports.createUser = async (req, res) => {

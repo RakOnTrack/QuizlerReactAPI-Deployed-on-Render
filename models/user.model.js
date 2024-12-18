@@ -17,6 +17,7 @@ const userSchema = new mongoose.Schema({
     unique: true,
     required: true,
   },
+  isTemporary: { type: Boolean, default: false }, // Indicates if the user is temporary
 });
 
 module.exports = userSchema;
