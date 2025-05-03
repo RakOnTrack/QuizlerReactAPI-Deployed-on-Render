@@ -11,18 +11,31 @@ let Directory = db.mongoose.connection.model(
 
 // Creating a new directory
 exports.createDirectory = async (req, res) => {
-  let name = req.body.name || "no name";
-  let isRoot = req.body.isRoot || false;
-  // let parentDirectoryId = req.user.rootDir || null;
-  let parentDirectoryId = req.user ? req.user.rootDir : null;
-  // ? null
-  // : req.body.parentDirectoryId || process.env.DEFAULT_ROOT_DIRECTORY;
-
   try {
+    let name = req.body.name;
+    let isRoot = req.body.isRoot || false;
+    let parentDirectoryId = req.body.parentDirectoryId || (req.user ? req.user.rootDir : null);
+
+    // Check for empty name
     if (!name && !isRoot) {
       return res
         .status(400)
         .json({ error: "Please enter a name for the directory" });
+    }
+
+    // Default name if needed
+    name = name || "no name";
+
+    // Validate parent directory ID if provided
+    if (parentDirectoryId && !isRoot) {
+      try {
+        const parentDirectory = await Directory.findById(parentDirectoryId);
+        if (!parentDirectory) {
+          return res.status(401).json({ error: "Parent directory not found" });
+        }
+      } catch (err) {
+        return res.status(401).json({ error: "Invalid parent directory ID" });
+      }
     }
 
     // Create a new directory with the provided name and parent directory ID
@@ -56,7 +69,7 @@ exports.createDirectory = async (req, res) => {
     // console.error(error);
     // Send an error response
     return res
-      .status(401)
+      .status(400)
       .json({ error: "Error creating directory: " + error.message });
   }
 };
@@ -356,55 +369,48 @@ exports.switchOrder = async (req, res) => {
   }
 };
 
-// Recursively deleting a directory and its items
-exports.deleteDirectory = async (req, res, flag = true) => {
+// Function for deleting a directory
+exports.deleteDirectory = async (req, res) => {
   let directoryId = req.body.directoryId || req.params.id;
 
   try {
+    if (!directoryId) {
+      return res.status(400).json({ error: "Missing directoryID" });
+    }
+
+    // Make sure the directory exists
     const directory = await Directory.findById(directoryId);
-
     if (!directory) {
-      res.status(401).json({ error: "Directory not found" });
-      return;
-    } else if (directoryId == process.env.DEFAULT_ROOT_DIRECTORY) {
-      res.status(401).json({ error: "Cannot delete route directory." });
-      return;
+      return res.status(401).json({ error: "Directory not found" });
     }
 
-    // Delete all quizzes within the directory
-    // await Quiz.deleteMany({ parentDirectory: directoryId });
-    // FIXME: wont work - this should be created here as an internal function
-    directory.quizzes.forEach((quiz) => {
-      deleteQuiz(quiz._id);
-    });
-
-    // Find all subdirectories within this directory
-    const subdirectories = await Directory.find({
-      parentDirectory: directoryId,
-    });
-
-    // Recursively delete subdirectories and their items
-    // FIXME: this might not be ideal and can break
-    for (const subdirectory of subdirectories) {
-      const data = {
-        body: {
-          directoryId: subdirectory._id.toString(),
-        },
-      };
-      await exports.deleteDirectory(data, res, false);
+    // Don't delete the root directory
+    if (directoryId === process.env.DEFAULT_ROOT_DIRECTORY) {
+      return res.status(401).json({ error: "Cannot delete root directory" });
     }
 
-    // Finally, delete the directory itself
+    // Get the parent directory to update its subdirectories
+    const parentDirectoryId = directory.parentDirectory;
+    if (parentDirectoryId) {
+      const parentDirectory = await Directory.findById(parentDirectoryId);
+      if (parentDirectory) {
+        // Remove the directory from the parent's subdirectories
+        parentDirectory.subdirectories = parentDirectory.subdirectories.filter(
+          (subId) => subId.toString() !== directoryId
+        );
+        await parentDirectory.save();
+      }
+    }
+
+    // Delete all quizzes in the directory
+    await Quiz.deleteMany({ parentDirectory: directoryId });
+
+    // Delete the directory itself
     await Directory.findByIdAndDelete(directoryId);
 
-    if (flag) {
-      res
-        .status(200)
-        .json({ message: "Directory and its items deleted successfully" });
-    }
+    res.status(200).json({ message: "Directory deleted successfully" });
   } catch (error) {
-    // console.log(error);
-    res.status(401).json({ error: error });
+    return res.status(401).json({ error: "Failed to delete directory: " + error.message });
   }
 };
 

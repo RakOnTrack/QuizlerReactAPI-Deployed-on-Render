@@ -32,7 +32,10 @@ router.put("/rename", directoryService.renameDirectory);
 // Route for switching the order of quizzes and subdirectories
 router.put("/switch-order", directoryService.switchOrder);
 
-// Route for deleting a directory
+// Route for deleting a directory - with ID parameter
 router.delete("/:id", directoryService.deleteDirectory);
+
+// Route for deleting a directory - with ID in the request body (for tests)
+router.delete("/", directoryService.deleteDirectory);
 
 module.exports = router;

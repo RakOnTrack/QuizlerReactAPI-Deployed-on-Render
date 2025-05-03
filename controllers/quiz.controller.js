@@ -9,15 +9,15 @@ const { generateQuiz } = require("./quizGenerator");
 
 let Question = db.mongoose.connection.model(
   "Questions",
-  require("../models/question.model"),
+  require("../models/question.model")
 );
 let Quiz = db.mongoose.connection.model(
   "Quizzes",
-  require("../models/quiz.model"),
+  require("../models/quiz.model")
 );
 let Directory = db.mongoose.connection.model(
   "Directory",
-  require("../models/directory.model"),
+  require("../models/directory.model")
 );
 
 // ==== Create ====
@@ -353,7 +353,7 @@ exports.addQuestion = async (req, res) => {
         Quiz.findByIdAndUpdate(
           quizId,
           { $push: { questions: savedQuestion._id } },
-          { new: true },
+          { new: true }
         )
           .exec()
           .then(async () => {
@@ -437,33 +437,43 @@ exports.markQuestionsCorrect = async (req, res) => {
 // Remove quiz using Id
 exports.deleteQuiz = async (req, res) => {
   const quizID = req.params.id;
+  console.log(`Attempting to delete quiz with ID: ${quizID}`);
 
   try {
     // Find the quiz by ID
-    const quiz = await Quiz.findById(quizID).exec();
+    const quiz = await Quiz.findById(quizID);
     if (!quiz) {
+      console.log(`Quiz with ID ${quizID} not found.`);
       return res
         .status(422)
         .json({ error: `Quiz with ID ${quizID} not found.` });
     }
 
     // Store the parent directory's ID if it exists
-    const parentDirectoryID = quiz.parentDirectory ? quiz.directory : null;
+    const parentDirectoryID = quiz.parentDirectory;
+    console.log(`Parent directory ID: ${parentDirectoryID}`);
 
     // Get the list of question references
     const questionIDs = quiz.questions;
+    console.log(`Questions to delete: ${questionIDs.length}`);
 
     // Delete the associated questions
-    await Question.deleteMany({ _id: { $in: questionIDs } }).exec();
+    if (questionIDs && questionIDs.length > 0) {
+      await Question.deleteMany({ _id: { $in: questionIDs } });
+    }
 
     // Remove the quiz
-    await Quiz.findByIdAndRemove(quizID).exec();
+    await Quiz.findByIdAndDelete(quizID);
+    console.log(`Quiz deleted successfully`);
 
+    // Update the parent directory if it exists
     if (parentDirectoryID) {
-      // If the quiz had a parent directory, update it
-      await Directory.findByIdAndUpdate(parentDirectoryID, {
-        $pull: { quizzes: quizID },
-      }).exec();
+      console.log(`Updating parent directory ${parentDirectoryID}`);
+      await Directory.findByIdAndUpdate(
+        parentDirectoryID,
+        { $pull: { quizzes: quizID } },
+        { new: true }
+      );
     }
 
     // Respond with success
@@ -472,6 +482,7 @@ exports.deleteQuiz = async (req, res) => {
       .json({ message: `Quiz with ID ${quizID} successfully deleted.` });
   } catch (err) {
     // Handle any errors
+    console.error(`Error deleting quiz: ${err}`);
     res
       .status(500)
       .json({ error: `Unable to remove quiz with ID ${quizID}: ${err}` });
@@ -520,39 +531,40 @@ exports.updateQuestion = (req, res) => {
 };
 
 // Remove question.
-exports.deleteQuestion = (req, res) => {
+exports.deleteQuestion = async (req, res) => {
   let questionID = req.params.questionId;
+  console.log(`Attempting to delete question with ID: ${questionID}`);
 
-  Question.findByIdAndRemove(questionID)
-    .exec()
-    .then((deletedQuestion) => {
-      if (!deletedQuestion) {
-        res
-          .status(422)
-          .json({ error: `Question with ID ${questionID} not found.` });
-        return;
-      }
+  try {
+    // Find and remove the question
+    const deletedQuestion = await Question.findByIdAndDelete(questionID);
+    
+    if (!deletedQuestion) {
+      console.log(`Question with ID ${questionID} not found.`);
+      return res
+        .status(422)
+        .json({ error: `Question with ID ${questionID} not found.` });
+    }
 
-      // Remove the question reference from all quizzes
-      return Quiz.updateMany(
-        { questions: questionID },
-        { $pull: { questions: questionID } },
-      ).exec();
-    })
-    .then(() => {
-      // Fetch the updated quizzes and save them to persist the changes
-      return Quiz.find({ questions: questionID }).exec();
-    })
-    .then((quizzes) => {
-      const savePromises = quizzes.map((quiz) => quiz.save());
-      //FIXME: Returns an empty object
-      res.status(200).json(savePromises);
-    })
-    .catch((err) => {
-      res.status(422).json({
-        error: `Error deleting question with ID ${questionID}: ${err}`,
-      });
+    // Remove the question reference from all quizzes that contain it
+    const updateResult = await Quiz.updateMany(
+      { questions: questionID },
+      { $pull: { questions: questionID } }
+    );
+    
+    console.log(`Updated ${updateResult.modifiedCount} quizzes`);
+
+    // Success response
+    res.status(200).json({ 
+      message: `Question with ID ${questionID} successfully deleted.`,
+      questionId: questionID
     });
+  } catch (err) {
+    console.error(`Error deleting question: ${err}`);
+    res.status(500).json({
+      error: `Error deleting question with ID ${questionID}: ${err}`
+    });
+  }
 };
 
 // ==== INTERNAL FUNCTIONS ====

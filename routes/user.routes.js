@@ -28,7 +28,7 @@ const verifyToken = async (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, "your_secret_key"); // Ensure this key matches the one used in /login
+    const decoded = jwt.verify(token, "your_secret_key"); // Using the same key as in controllers/user.controller.js
     const user = await User.findById(decoded._id);
     if (!user) {
       return res.status(401).send("Unauthorized: Invalid token");

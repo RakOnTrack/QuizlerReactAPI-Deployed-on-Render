@@ -15,7 +15,7 @@ const { createDirectory } = directoryController;
 
 // JWT Options - ensure these are securely configured and imported
 const jwtOptions = {
-  secretOrKey: process.env.JWT_SECRET, // Use an environment variable for the secret key
+  secretOrKey: "your_secret_key", // Use a consistent key that matches verifyToken middleware
 };
 
 // let User = models.userSchema;
@@ -168,10 +168,10 @@ module.exports.createUser = async (req, res) => {
 // Login user
 module.exports.loginUser = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { username, password } = req.body;
 
     // Find the user by username
-    const user = await User.findOne({ email: email });
+    const user = await User.findOne({ username: username });
     if (!user) {
       return res.status(401).json({ message: "Invalid username" });
     }
